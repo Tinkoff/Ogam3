@@ -82,41 +82,47 @@ namespace Ogam3.TxRx {
 
         Thread StartListener(Stream transferChannel, Action<ulong, byte[]> receiveDataSet) {
             var listenThrd = new Thread(() => { // Listener thread
-                var pkgBuilder = new Dictionary<uint, DataBuilder>();
-                var cnt = 1;
-                var w = new Stopwatch();
-                w.Start();
-                while (true) {
-                    foreach (var tpLspS in TpLspHelper.SequenceReader(transferChannel)) {
-                        if (tpLspS.IsQuantizied) {
-                            DataBuilder db = null;
-                            if (!pkgBuilder.TryGetValue(tpLspS.QuantId, out db)) {
-                                db = new DataBuilder(tpLspS.DataLength);
-                                pkgBuilder.Add(tpLspS.QuantId, db);
+                try { 
+                    var pkgBuilder = new Dictionary<uint, DataBuilder>();
+                    var cnt = 1;
+                    var w = new Stopwatch();
+                    w.Start();
+                    while (true) {
+                        foreach (var tpLspS in TpLspHelper.SequenceReader(transferChannel)) {
+                            if (tpLspS.IsQuantizied) {
+                                DataBuilder db = null;
+                                if (!pkgBuilder.TryGetValue(tpLspS.QuantId, out db)) {
+                                    db = new DataBuilder(tpLspS.DataLength);
+                                    pkgBuilder.Add(tpLspS.QuantId, db);
+                                }
+
+                                db.WriteData(tpLspS.QuantData, tpLspS.QuantShift);
+
+                                if (db.IsComplete()) {
+                                    var result = db.GetData();
+
+                                    pkgBuilder.Remove(tpLspS.QuantId);
+                                    var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
+
+                                    Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
+
+                                    receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
+                                }
+
                             }
-
-                            db.WriteData(tpLspS.QuantData, tpLspS.QuantShift);
-
-                            if (db.IsComplete()) {
-                                var result = db.GetData();
-
-                                pkgBuilder.Remove(tpLspS.QuantId);
+                            else {
+                                var result = tpLspS.QuantData;
                                 var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
-
                                 Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
 
                                 receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
                             }
-
-                        }
-                        else {
-                            var result = tpLspS.QuantData;
-                            var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
-                            Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
-
-                            receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
                         }
                     }
+                }
+                catch (Exception e) {
+                    Console.WriteLine(e.Message);
+                    Console.WriteLine("TODO make reconnect");
                 }
             }) {IsBackground = true};
 

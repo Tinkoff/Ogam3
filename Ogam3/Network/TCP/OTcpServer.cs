@@ -2,6 +2,8 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Remoting.Activation;
+using System.Runtime.Remoting.Contexts;
 using System.Threading;
 using Ogam3.Lsp;
 using Ogam3.TxRx;
@@ -36,14 +38,29 @@ namespace Ogam3.Network.Tcp {
             }
         }
 
+        public static TcpClient GetContextTcpClient() {
+            return Thread.GetData(Thread.GetNamedDataSlot("context-tcp-client")) as TcpClient;
+        }
+
+        public static IPEndPoint GetContextTcpEndPoint() {
+            return (IPEndPoint)GetContextTcpClient()?.Client?.RemoteEndPoint;
+        }
+
+        private static void SetContextTcpClient(TcpClient client) {
+            Thread.SetData(Thread.GetNamedDataSlot("context-tcp-client"), client);
+        }
+
         private void ClientThread(object o) {
             var client = (TcpClient) o;
             var endpoint = (IPEndPoint) client.Client.RemoteEndPoint;
+            Console.WriteLine($"(client-connected \"{endpoint.Address}:{endpoint.Port}\")");
 
             var ns = new NetStream(client);
 
             var server = new Transfering(ns, ns, BufferSize);
             server.StartReceiver(data => {
+                SetContextTcpClient(client);
+
                 var receive = BinFormater.Read(new MemoryStream(data));
 
                 try {
@@ -59,4 +76,22 @@ namespace Ogam3.Network.Tcp {
             });
         }
     }
+
+    //public class ContextTcpClient : IContextProperty {
+    //    public TcpClient TcpClient { get; }
+
+    //    public ContextTcpClient(TcpClient client) {
+    //        TcpClient = client;
+    //    }
+
+    //    public bool IsNewContextOK(Context newCtx) {
+    //        throw new NotImplementedException();
+    //    }
+
+    //    public void Freeze(Context newContext) {
+    //        throw new NotImplementedException();
+    //    }
+
+    //    public string Name => "context-tcp-client";
+    //}
 }
