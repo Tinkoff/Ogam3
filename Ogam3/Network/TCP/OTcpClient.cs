@@ -5,7 +5,7 @@ using Ogam3.Lsp;
 using Ogam3.TxRx;
 
 namespace Ogam3.Network.Tcp {
-    class OTcpClient {
+    public class OTcpClient {
         public string Host;
         public int Port;
 

@@ -7,7 +7,7 @@ using Ogam3.Lsp;
 using Ogam3.TxRx;
 
 namespace Ogam3.Network.Tcp {
-    class OTcpServer {
+    public class OTcpServer {
         private readonly TcpListener _listener;
         private Thread listerThread;
         public uint BufferSize = 1048576;

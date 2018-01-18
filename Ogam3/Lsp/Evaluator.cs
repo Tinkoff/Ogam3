@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Ogam3.Lsp {
-    class Evaluator {
+    public class Evaluator {
 
         public EnviromentFrame DefaultEnviroment = new Core();
 

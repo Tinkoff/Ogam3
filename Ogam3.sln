@@ -5,6 +5,14 @@ VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ogam3", "Ogam3\Ogam3.csproj", "{75C9EA24-E356-4197-B72A-99D41699898D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{A9204EF7-6FDC-4A39-A5DF-79989788D50D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tcp", "Tcp", "{C194E246-25DD-4660-B635-5882233792C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpServer", "Examples\Tcp\TcpServer\TcpServer.csproj", "{2855A488-F10D-4FD9-AA1C-15AD905994B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpClient", "Examples\Tcp\TcpClient\TcpClient.csproj", "{CF851F86-032E-4A1C-BF5F-6F23D85DFFD5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +23,22 @@ Global
 		{75C9EA24-E356-4197-B72A-99D41699898D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75C9EA24-E356-4197-B72A-99D41699898D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75C9EA24-E356-4197-B72A-99D41699898D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2855A488-F10D-4FD9-AA1C-15AD905994B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2855A488-F10D-4FD9-AA1C-15AD905994B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2855A488-F10D-4FD9-AA1C-15AD905994B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2855A488-F10D-4FD9-AA1C-15AD905994B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF851F86-032E-4A1C-BF5F-6F23D85DFFD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF851F86-032E-4A1C-BF5F-6F23D85DFFD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF851F86-032E-4A1C-BF5F-6F23D85DFFD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF851F86-032E-4A1C-BF5F-6F23D85DFFD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C194E246-25DD-4660-B635-5882233792C6} = {A9204EF7-6FDC-4A39-A5DF-79989788D50D}
+		{2855A488-F10D-4FD9-AA1C-15AD905994B3} = {C194E246-25DD-4660-B635-5882233792C6}
+		{CF851F86-032E-4A1C-BF5F-6F23D85DFFD5} = {C194E246-25DD-4660-B635-5882233792C6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4542CFE0-FDC3-4AD2-A34F-DE53B310BE28}

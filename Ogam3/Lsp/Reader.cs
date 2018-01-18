@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Ogam3.Lsp {
-    internal static class Reader {
+    public static class Reader {
         private enum ReadState {
             Normal,
             String,
