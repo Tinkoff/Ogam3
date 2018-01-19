@@ -20,6 +20,10 @@ namespace Ogam3.Lsp {
             Variables[ident.Name] = value;
         }
 
+        public void Define(string ident, dynamic value) {
+            Define(new Symbol(ident), value);
+        }
+
         public void Set(Symbol ident, dynamic value) {
             if (Variables.ContainsKey(ident.Name)) {
                 Variables[ident.Name] = value;

@@ -23,6 +23,8 @@ namespace Ogam3.Network.Tcp {
             _listener = new TcpListener(IPAddress.Any, port);
             _listener.Start();
 
+            Evaluator.DefaultEnviroment.Define("get-context-tcp-client", new Func<dynamic>(() => GetContextTcpClient()));
+
             listerThread = new Thread(ListenerHandler);
             listerThread.IsBackground = true;
             listerThread.Start(_listener);
@@ -38,8 +40,10 @@ namespace Ogam3.Network.Tcp {
             }
         }
 
+        private static string ContextTcpClient = "context-tcp-client";
+
         public static TcpClient GetContextTcpClient() {
-            return Thread.GetData(Thread.GetNamedDataSlot("context-tcp-client")) as TcpClient;
+            return Thread.GetData(Thread.GetNamedDataSlot(ContextTcpClient)) as TcpClient;
         }
 
         public static IPEndPoint GetContextTcpEndPoint() {
@@ -47,7 +51,7 @@ namespace Ogam3.Network.Tcp {
         }
 
         private static void SetContextTcpClient(TcpClient client) {
-            Thread.SetData(Thread.GetNamedDataSlot("context-tcp-client"), client);
+            Thread.SetData(Thread.GetNamedDataSlot(ContextTcpClient), client);
         }
 
         private void ClientThread(object o) {

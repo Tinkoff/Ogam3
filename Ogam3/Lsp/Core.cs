@@ -16,19 +16,19 @@ namespace Ogam3.Lsp {
         }
 
         void DefineBool() {
-            Define(new Symbol("#f"), false);
-            Define(new Symbol("#t"), true);
+            Define("#f", false);
+            Define("#t", true);
 
-            Define(new Symbol("="), new Func<double, double, dynamic>((a, b) => a == b));
-            Define(new Symbol("eq?"), new Func<dynamic, dynamic, dynamic>((a, b) => a == b));
-            Define(new Symbol(">"), new Func<dynamic, dynamic, dynamic>((a, b) => a > b));
-            Define(new Symbol("<"), new Func<dynamic, dynamic, dynamic>((a, b) => a < b));
+            Define("=", new Func<double, double, dynamic>((a, b) => a == b));
+            Define("eq?", new Func<dynamic, dynamic, dynamic>((a, b) => a == b));
+            Define(">", new Func<dynamic, dynamic, dynamic>((a, b) => a > b));
+            Define("<", new Func<dynamic, dynamic, dynamic>((a, b) => a < b));
 
-            Define(new Symbol("not"), new Func<dynamic, dynamic>((a) => Evaluator.GetSBool(a)));
+            Define("not", new Func<dynamic, dynamic>((a) => Evaluator.GetSBool(a)));
 
-            Define(new Symbol("zero?"), new Func<dynamic, dynamic>((a) => a == 0));
+            Define("zero?", new Func<dynamic, dynamic>((a) => a == 0));
 
-            Define(new Symbol("and"), new Func<Params, dynamic>((par) => {
+            Define("and", new Func<Params, dynamic>((par) => {
                 var result = true;
 
                 foreach (var param in par) {
@@ -42,7 +42,7 @@ namespace Ogam3.Lsp {
                 return result;
             }));
 
-            Define(new Symbol("or"), new Func<Params, dynamic>((par) => {
+            Define("or", new Func<Params, dynamic>((par) => {
                 var result = false;
                 foreach (var param in par) {
                     result = result || Evaluator.GetSBool(param);
@@ -57,35 +57,35 @@ namespace Ogam3.Lsp {
         }
 
         void DefineMath() {
-            Define(new Symbol("+"), new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc + p)));
-            Define(new Symbol("-"), new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc - p)));
-            Define(new Symbol("*"), new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc * p)));
-            Define(new Symbol("//"), new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc / p)));
+            Define("+", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc + p)));
+            Define("-", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc - p)));
+            Define("*", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc * p)));
+            Define("//", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc / p)));
         }
 
         void DefineSequ() {
-            Define(new Symbol("cons"), new Func<dynamic, dynamic, dynamic>((a, b) => new Cons(a, b)));
-            Define(new Symbol("car"), new Func<Cons, dynamic>((a) => a.Car()));
-            Define(new Symbol("cdr"), new Func<Cons, dynamic>((a) => a.Cdr()));
+            Define("cons", new Func<dynamic, dynamic, dynamic>((a, b) => new Cons(a, b)));
+            Define("car", new Func<Cons, dynamic>((a) => a.Car()));
+            Define("cdr", new Func<Cons, dynamic>((a) => a.Cdr()));
 
-            Define(new Symbol("set-car!"), new Func<Cons, dynamic, dynamic>((cons, val) => cons.SetCar(val)));
-            Define(new Symbol("set-cdr!"), new Func<Cons, dynamic, dynamic>((cons, val) => cons.SetCdr(val)));
+            Define("set-car!", new Func<Cons, dynamic, dynamic>((cons, val) => cons.SetCar(val)));
+            Define("set-cdr!", new Func<Cons, dynamic, dynamic>((cons, val) => cons.SetCdr(val)));
 
-            Define(new Symbol("vector"), new Func<Params, dynamic>((par) => par.ToArray()));
+            Define("vector", new Func<Params, dynamic>((par) => par.ToArray()));
         }
 
         void DefineIO() {
-            Define(new Symbol("display"), new Func<Params, dynamic>((par) => {
+            Define("display", new Func<Params, dynamic>((par) => {
                 Console.Write(par[0]);
                 return null;
             }));
 
-            Define(new Symbol("newline"), new Func<Params, dynamic>((par) => {
+            Define("newline", new Func<Params, dynamic>((par) => {
                 Console.WriteLine("");
                 return null;
             }));
 
-            Define(new Symbol("read"), new Func<string, dynamic>((str) => {
+            Define("read", new Func<string, dynamic>((str) => {
                 if (string.IsNullOrWhiteSpace(str)) return null;
 
                 return Reader.Read(str).Car();
@@ -93,7 +93,7 @@ namespace Ogam3.Lsp {
         }
 
         void DefineTools() {
-            Define(new Symbol("hold-process"), new Func<dynamic>(() => {
+            Define("hold-process", new Func<dynamic>(() => {
                 var processName = Process.GetCurrentProcess().ProcessName;
                 var defColor = Console.ForegroundColor;
 
@@ -108,12 +108,12 @@ namespace Ogam3.Lsp {
                 return null;
             }));
 
-            Define(new Symbol("exit"), new Func<dynamic>(() => {
+            Define("exit", new Func<dynamic>(() => {
                 Environment.Exit(0);
                 return null;
             }));
 
-            Define(new Symbol("begin-invoke"), new Func<MulticastDelegate, Params,dynamic>((mcd, param) => {
+            Define("begin-invoke", new Func<MulticastDelegate, Params,dynamic>((mcd, param) => {
                 Task.Factory.StartNew(() => { 
                     var parameters = mcd.Method.GetParameters();
                     var cArg = new List<object>();
