@@ -190,7 +190,7 @@ namespace Ogam3.Lsp {
             } else if (item is bool) {
                 writeCode(Codes.Bool);
                 ms.WriteByte((byte)((bool)item ? 1 : 0));
-            } else if (item is null) {
+            } else if (item == null) {
                 writeCode(Codes.Null);
             } else if (item is DateTime) {
                 writeCode(Codes.DateTime);
