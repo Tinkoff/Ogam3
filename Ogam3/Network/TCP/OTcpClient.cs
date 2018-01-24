@@ -78,7 +78,7 @@ namespace Ogam3.Network.Tcp {
             _sendSync.Unlock();
         }
 
-        public object Call(Cons seq) {
+        public object Call(object seq) {
             if (_sendSync.Wait(5000)) {
                 return BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
             }

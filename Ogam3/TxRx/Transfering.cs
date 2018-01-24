@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -36,26 +37,30 @@ namespace Ogam3.TxRx {
             _quantSize = quantSize;
             _synchronizer = new Dictionary<ulong, Action<byte[]>>();
 
-            Task.Factory.StartNew(() => {
-                var rap = 0;
-                var pingRap = TpLspHelper.NewUID();
-                while (true) {
-                    var sync = new Synchronizer(true);
-                    _synchronizer[pingRap] = (rslt) => {
-                        sync.Unlock();
-                    };
+            var pingRap = (ulong)0;
 
+            var sync = new Synchronizer(true);
+            _synchronizer[pingRap] = (rslt) => {
+                sync.Unlock();
+            };
+
+            new Thread(() => {
+                while (true) {
+                    sync.Lock();
                     SendManager(new byte[0], 0);
 
-                    if (!sync.Wait(1000)) {
+                    if (!sync.Wait(25000)) {
                         isConnectionStabilised = false;
-                        return;
+                        Console.WriteLine("PING TIMEOUT ON CURRENT CONNECTION");
                     }
 
-                    _synchronizer.Remove(pingRap);
+                    if (isTranferDead) {
+                        return; // kill current thread
+                    }
+
                     Thread.Sleep(11000);
                 }
-            });
+            }){IsBackground = true}.Start();
         }
 
         public byte[] Send(byte[] data) {
@@ -147,6 +152,7 @@ namespace Ogam3.TxRx {
                     }
                 }
                 catch (Exception e) {
+                    isTranferDead = true;
                     OnConnectionError(e);
                 }
             }) {IsBackground = true};
@@ -183,6 +189,7 @@ namespace Ogam3.TxRx {
             _receiveStream?.Dispose();
             ConnectionStabilised = null;
             ConnectionError = null;
+            isTranferDead = true;
         }
     }
 }

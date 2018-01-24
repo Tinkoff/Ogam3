@@ -34,9 +34,10 @@ namespace Ogam3.Network.Tcp {
             var listener = (TcpListener) o;
             while (true) {
                 var client = listener.AcceptTcpClient();
-                var Thread = new Thread(ClientThread);
-                Thread.IsBackground = true;
-                Thread.Start(client);
+                //var Thread = new Thread(ClientConnection);
+                //Thread.IsBackground = true;
+                //Thread.Start(client);
+                ClientConnection(client);
             }
         }
 
@@ -54,7 +55,7 @@ namespace Ogam3.Network.Tcp {
             Thread.SetData(Thread.GetNamedDataSlot(ContextTcpClient), client);
         }
 
-        private void ClientThread(object o) {
+        private void ClientConnection(object o) {
             var client = (TcpClient) o;
             var endpoint = (IPEndPoint) client.Client.RemoteEndPoint;
             Console.WriteLine($"(client-connected \"{endpoint.Address}:{endpoint.Port}\")");
@@ -75,6 +76,7 @@ namespace Ogam3.Network.Tcp {
                         return new byte[0];
                     }
                 } catch (Exception e) {
+                    Console.WriteLine(e.Message);
                     return BinFormater.Write(e.ToString()).ToArray();
                 }
             });
