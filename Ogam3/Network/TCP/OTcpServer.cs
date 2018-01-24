@@ -80,22 +80,4 @@ namespace Ogam3.Network.Tcp {
             });
         }
     }
-
-    //public class ContextTcpClient : IContextProperty {
-    //    public TcpClient TcpClient { get; }
-
-    //    public ContextTcpClient(TcpClient client) {
-    //        TcpClient = client;
-    //    }
-
-    //    public bool IsNewContextOK(Context newCtx) {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    public void Freeze(Context newContext) {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    public string Name => "context-tcp-client";
-    //}
 }

@@ -4,13 +4,31 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Ogam3.Utils;
 
 namespace Ogam3.TxRx {
-    class Transfering {
+    class Transfering : IDisposable {
         private Stream _sendStream;
         private Stream _receiveStream;
         private uint _quantSize;
         private Dictionary<ulong, Action<byte[]>> _synchronizer;
+
+        private bool isTranferDead;
+
+        private bool isConnectionStabilised;
+        public Action ConnectionStabilised;
+        protected virtual void OnTransferSuccess() {
+            if (!isConnectionStabilised) {
+                isConnectionStabilised = true;
+                ConnectionStabilised?.Invoke();
+            }
+        }
+
+        public Action<Exception> ConnectionError;
+        protected virtual void OnConnectionError(Exception ex) {
+            isTranferDead = true;
+            ConnectionError?.Invoke(ex);
+        }
 
         public Transfering(Stream sendStream, Stream receiveStream, uint quantSize) {
             _sendStream = sendStream;
@@ -20,48 +38,56 @@ namespace Ogam3.TxRx {
 
             Task.Factory.StartNew(() => {
                 var rap = 0;
-                var sw = new Stopwatch();
+                var pingRap = TpLspHelper.NewUID();
                 while (true) {
-                    var sem = new SemaphoreSlim(0, 1);
-                    _synchronizer[0] = (rslt) => {
-                        if (sem.CurrentCount == 0) {
-                            sem.Release();
-                        }
+                    var sync = new Synchronizer(true);
+                    _synchronizer[pingRap] = (rslt) => {
+                        sync.Unlock();
                     };
 
                     SendManager(new byte[0], 0);
 
-                    sem.Wait();
-                    sw.Restart();
-                    _synchronizer.Remove(0);
-                    sw.Stop();
-                    Console.WriteLine($"Ping accept {sw.Elapsed}");
-                    Thread.Sleep(60000);
+                    if (!sync.Wait(1000)) {
+                        isConnectionStabilised = false;
+                        return;
+                    }
+
+                    _synchronizer.Remove(pingRap);
+                    Thread.Sleep(11000);
                 }
             });
         }
 
         public byte[] Send(byte[] data) {
+            if (isTranferDead) return new byte[0];
+
             var rap = TpLspHelper.NewUID();
-            var sem = new SemaphoreSlim(0,1);
-            byte[] result = new byte[0];
+            var sync = new Synchronizer(true);
+            var result = new byte[0];
+
             _synchronizer.Add(rap, (rslt) => {
                 result = rslt;
-                sem.Release();
+                sync.Unlock();
             });
 
             SendManager(data, rap);
 
-            sem.Wait();
+            sync.Wait();
             _synchronizer.Remove(rap);
             return result;
         }
 
         private void SendManager(byte[] data, ulong rap) {
-            using (var sync = Stream.Synchronized(_sendStream)) {
-                foreach (var quant in TpLspHelper.Quantize(data, _quantSize, rap)) {
-                    sync.Write(quant, 0, quant.Length);
+            try { 
+                using (var sync = Stream.Synchronized(_sendStream)) {
+                    foreach (var quant in TpLspHelper.Quantize(data, _quantSize, rap)) {
+                        sync.Write(quant, 0, quant.Length);
+                    }
                 }
+                OnTransferSuccess();
+            }
+            catch (Exception e) {
+                OnConnectionError(e);
             }
         }
 
@@ -102,9 +128,9 @@ namespace Ogam3.TxRx {
                                     var result = db.GetData();
 
                                     pkgBuilder.Remove(tpLspS.QuantId);
-                                    var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
+                                    //var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
 
-                                    Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
+                                    //Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
 
                                     receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
                                 }
@@ -112,8 +138,8 @@ namespace Ogam3.TxRx {
                             }
                             else {
                                 var result = tpLspS.QuantData;
-                                var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
-                                Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
+                                //var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
+                                //Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
 
                                 receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
                             }
@@ -121,8 +147,7 @@ namespace Ogam3.TxRx {
                     }
                 }
                 catch (Exception e) {
-                    Console.WriteLine(e.Message);
-                    Console.WriteLine("TODO make reconnect");
+                    OnConnectionError(e);
                 }
             }) {IsBackground = true};
 
@@ -151,6 +176,13 @@ namespace Ogam3.TxRx {
             public byte[] GetData() {
                 return _data;
             }
+        }
+
+        public void Dispose() {
+            _sendStream?.Dispose();
+            _receiveStream?.Dispose();
+            ConnectionStabilised = null;
+            ConnectionError = null;
         }
     }
 }

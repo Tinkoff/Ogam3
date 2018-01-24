@@ -4,12 +4,13 @@ using System.Net.Sockets;
 
 namespace Ogam3.Network.Tcp {
     class NetStream : Stream {
-        private TcpClient neTcpClient;
+        private TcpClient tcpClient { get; }
+
         public NetStream(TcpClient client) {
-            neTcpClient = client;
+            tcpClient = client;
         }
         public override void Flush() {
-            neTcpClient.GetStream().Flush();
+            tcpClient.GetStream().Flush();
         }
 
         public override long Seek(long offset, SeekOrigin origin) {
@@ -21,28 +22,28 @@ namespace Ogam3.Network.Tcp {
         }
 
         public override int Read(byte[] buffer, int offset, int count) {
-            return neTcpClient.GetStream().Read(buffer, offset, count);
+            return tcpClient.GetStream().Read(buffer, offset, count);
         }
 
         public override void Write(byte[] buffer, int offset, int count) {
-            neTcpClient.GetStream().Write(buffer, offset, count);
+            tcpClient.GetStream().Write(buffer, offset, count);
         }
         public override bool CanRead {
             //get { return neTcpClient.GetStream().CanRead && neTcpClient.GetStream().DataAvailable; }
             get { return true; }
         }
         public override bool CanSeek {
-            get { return neTcpClient.GetStream().CanSeek; }
+            get { return tcpClient.GetStream().CanSeek; }
         }
         public override bool CanWrite {
-            get { return neTcpClient.GetStream().CanWrite; }
+            get { return tcpClient.GetStream().CanWrite; }
         }
         public override long Length {
-            get { return neTcpClient.GetStream().Length; }
+            get { return tcpClient.GetStream().Length; }
         }
         public override long Position {
-            get { return neTcpClient.GetStream().Position; }
-            set { neTcpClient.GetStream().Position = value; }
+            get { return tcpClient.GetStream().Position; }
+            set { tcpClient.GetStream().Position = value; }
         }
     }
 }
