@@ -47,6 +47,7 @@
     <Compile Include="Lsp\Cons.cs" />
     <Compile Include="Lsp\Continuation.cs" />
     <Compile Include="Lsp\Core.cs" />
+    <Compile Include="Lsp\Definer.cs" />
     <Compile Include="Lsp\EnviromentFrame.cs" />
     <Compile Include="Lsp\Evaluator.cs" />
     <Compile Include="Lsp\Lambda.cs" />
