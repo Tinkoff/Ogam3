@@ -53,8 +53,10 @@
     <Compile Include="Lsp\Lambda.cs" />
     <Compile Include="Lsp\Params.cs" />
     <Compile Include="Lsp\Reader.cs" />
+    <Compile Include="Lsp\SpecialMessage.cs" />
     <Compile Include="Lsp\Symbol.cs" />
     <Compile Include="Lsp\TailCall.cs" />
+    <Compile Include="Network\ISomeClient.cs" />
     <Compile Include="Network\TCP\NetStream.cs" />
     <Compile Include="Network\TCP\OTcpClient.cs" />
     <Compile Include="Network\TCP\OTcpServer.cs" />

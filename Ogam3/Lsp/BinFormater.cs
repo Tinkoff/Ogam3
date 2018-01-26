@@ -27,6 +27,7 @@ namespace Ogam3.Lsp {
             public const byte StreamLong = (byte)'R';
             public const byte Null = (byte)'n';
             public const byte DateTime = (byte)'d';
+            public const byte SpecialMessage = (byte)'e';
         }
 
         public static Cons Read(MemoryStream data) {
@@ -104,6 +105,9 @@ namespace Ogam3.Lsp {
                             
                         //}
                         throw new Exception("Not supported");
+                        break;
+                    case Codes.SpecialMessage:
+                        stack.Peek().Add(new SpecialMessage(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0)))));
                         break;
                     case 'Q': {
                         var nod = new Cons(new Symbol("quote"));
@@ -226,7 +230,12 @@ namespace Ogam3.Lsp {
                 var bytes = ReadFully(item as Stream);
                 writeCode(Codes.StreamShort);
                 MsWrite(ms, bytes);
-            }  else {
+            }  else if (item is SpecialMessage) {
+                var bytes = Encoding.UTF8.GetBytes((item as SpecialMessage).Message);
+                writeCode(Codes.SpecialMessage);
+                MsWrite(ms, BitConverter.GetBytes((int)bytes.Length));
+                MsWrite(ms, bytes);
+            } else {
                 throw new Exception($"The {item.GetType()} is unknown datatype");
             }
 

@@ -7,7 +7,7 @@ using Ogam3.TxRx;
 using Ogam3.Utils;
 
 namespace Ogam3.Network.Tcp {
-    public class OTcpClient {
+    public class OTcpClient : ISomeClient{
         public string Host;
         public int Port;
 
@@ -30,6 +30,10 @@ namespace Ogam3.Network.Tcp {
                     _connSync.Wait();
                 }
             }) {IsBackground = true}.Start();
+        }
+
+        public T CreateInterfase<T>() {
+            return (T)Definer.CreateTcpCaller(typeof(T), this);
         }
 
         private TcpClient ConnectTcp() {
@@ -78,9 +82,21 @@ namespace Ogam3.Network.Tcp {
             _sendSync.Unlock();
         }
 
+        public event Action<SpecialMessage, object> SpecialMessageEvt;
+
+        protected void OnSpecialMessageEvt(SpecialMessage sm, object call) {
+            SpecialMessageEvt?.Invoke(sm, call);
+        }
+
         public object Call(object seq) {
             if (_sendSync.Wait(5000)) {
-                return BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
+                var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
+                if (resp is SpecialMessage) {
+                    OnSpecialMessageEvt(resp as SpecialMessage, seq);
+                    return null;
+                }
+
+                return resp;
             }
             else {
                 // TODO connection was broken

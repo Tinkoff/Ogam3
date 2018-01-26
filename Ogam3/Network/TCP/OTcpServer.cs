@@ -30,6 +30,10 @@ namespace Ogam3.Network.Tcp {
             listerThread.Start(_listener);
         }
 
+        public void RegisterImplementation(object instanceOfImplementation) {
+            Definer.Define(Evaluator.DefaultEnviroment, instanceOfImplementation);
+        }
+
         private void ListenerHandler(object o) {
             var listener = (TcpListener) o;
             while (true) {
@@ -77,7 +81,7 @@ namespace Ogam3.Network.Tcp {
                     }
                 } catch (Exception e) {
                     Console.WriteLine(e.Message);
-                    return BinFormater.Write(e.ToString()).ToArray();
+                    return BinFormater.Write(new SpecialMessage(e)).ToArray();
                 }
             });
         }

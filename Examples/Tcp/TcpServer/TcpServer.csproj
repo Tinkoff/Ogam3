@@ -53,6 +53,10 @@
       <Project>{75c9ea24-e356-4197-b72a-99d41699898d}</Project>
       <Name>Ogam3</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CommonInterface\CommonInterface.csproj">
+      <Project>{b3703892-277e-4aa7-a0dd-8d0796489101}</Project>
+      <Name>CommonInterface</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
