@@ -6,11 +6,12 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Ogam3.Lsp {
-    static class BinFormater {
+    public static class BinFormater {
 
         private struct Codes {
             public const byte Open = (byte)'(';
             public const byte Close = (byte)')';
+            public const byte Dot = (byte)'.';
             public const byte Integer16 = (byte)'i';
             public const byte Integer32 = (byte)'I';
             public const byte Integer64 = (byte)'l';
@@ -53,6 +54,17 @@ namespace Ogam3.Lsp {
             var root = new Cons();
             stack.Push(root);
             var isQuote = false;
+            var isDot = false; // подумать
+
+            var set = new Action<object>(o => {
+                if (isDot) {
+                    (stack.Peek() as Cons).SetCdr(o);
+                    isDot = false;
+                }
+                else {
+                    stack.Peek().Add(o);
+                }
+            });
 
             while (true) {
                 var b = data.ReadByte();
@@ -69,52 +81,55 @@ namespace Ogam3.Lsp {
                     case Codes.Close:
                         stack.Pop();
                         break;
+                    case Codes.Dot:
+                        isDot = true;
+                        break;
                         //FIXED SIZE
                     case Codes.Integer16:
-                        stack.Peek().Add(BitConverter.ToInt16(R(data, 2), 0));
+                        set(BitConverter.ToInt16(R(data, 2), 0));
                         break;
                     case Codes.Integer32:
-                        stack.Peek().Add(BitConverter.ToInt32(R(data, 4), 0));
+                        set(BitConverter.ToInt32(R(data, 4), 0));
                         break;
                     case Codes.Integer64:
-                        stack.Peek().Add(BitConverter.ToInt64(R(data, 8), 0));
+                        set(BitConverter.ToInt64(R(data, 8), 0));
                         break;
                     case Codes.Byte:
-                        stack.Peek().Add(data.ReadByte());
+                        set(data.ReadByte());
                         break;
                     case Codes.Bool:
-                        stack.Peek().Add(data.ReadByte() != 0);
+                        set(data.ReadByte() != 0);
                         break;
                     case Codes.Charter8:
-                        stack.Peek().Add((char)data.ReadByte());
+                        set((char)data.ReadByte());
                         break;
                     case Codes.Charter32:
-                        stack.Peek().Add(Encoding.UTF32.GetChars(R(data, 4)).FirstOrDefault());
+                        set(Encoding.UTF32.GetChars(R(data, 4)).FirstOrDefault());
                         break;
                     case Codes.Float32:
-                        stack.Peek().Add(BitConverter.ToSingle(R(data, 4), 0));
+                        set(BitConverter.ToSingle(R(data, 4), 0));
                         break;
                     case Codes.Float64:
-                        stack.Peek().Add(BitConverter.ToDouble(R(data, 8), 0));
+                        set(BitConverter.ToDouble(R(data, 8), 0));
                         break;
                         //FLOAT SIZE
                     case Codes.SymbolShort:
-                        stack.Peek().Add(new Symbol(Encoding.UTF8.GetString(R(data, data.ReadByte()))));
+                        set(new Symbol(Encoding.UTF8.GetString(R(data, data.ReadByte()))));
                         break;
                     case Codes.SymbolLong:
-                        stack.Peek().Add(new Symbol(Encoding.UTF8.GetString(R(data, BitConverter.ToInt16(R(data, 2), 0)))));
+                        set(new Symbol(Encoding.UTF8.GetString(R(data, BitConverter.ToInt16(R(data, 2), 0)))));
                         break;
                     case Codes.String:
-                        stack.Peek().Add(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0))));
+                        set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0))));
                         break;
                     case Codes.StreamShort:
-                        stack.Peek().Add(new MemoryStream(R(data, BitConverter.ToInt32(R(data, 4), 0))));
+                        set(new MemoryStream(R(data, BitConverter.ToInt32(R(data, 4), 0))));
                         break;
                     case Codes.Null:
-                        stack.Peek().Add(null);
+                        set(null);
                         break;
                     case Codes.DateTime:
-                        stack.Peek().Add(DateTime.FromBinary(BitConverter.ToInt64(R(data, 8), 0)));
+                        set(DateTime.FromBinary(BitConverter.ToInt64(R(data, 8), 0)));
                         break;
                     case Codes.StreamLong: // TODO
                         //var length = BitConverter.ToInt32(R(data, 4), 0);
@@ -125,7 +140,7 @@ namespace Ogam3.Lsp {
                         throw new Exception("Not supported");
                         break;
                     case Codes.SpecialMessage:
-                        stack.Peek().Add(new SpecialMessage(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0)))));
+                        set(new SpecialMessage(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0)))));
                         break;
                     case 'Q': {
                         var nod = new Cons(new Symbol("quote"));
@@ -169,7 +184,14 @@ namespace Ogam3.Lsp {
             ms.WriteByte(Codes.Open);
 
             foreach (var o in tree.GetIterator()) {
-                    WriteItem(ms, o.Car());
+                WriteItem(ms, o.Car());
+
+                var cdr = o.Cdr();
+
+                if (cdr is Cons || (cdr == null)) continue;
+
+                ms.WriteByte(Codes.Dot);
+                WriteItem(ms, cdr);
             }
 
             ms.WriteByte(Codes.Close);
@@ -247,6 +269,7 @@ namespace Ogam3.Lsp {
             } else if (item is Stream) {
                 var bytes = ReadFully(item as Stream);
                 writeCode(Codes.StreamShort);
+                MsWrite(ms, BitConverter.GetBytes((uint)bytes.Length));
                 MsWrite(ms, bytes);
             }  else if (item is SpecialMessage) {
                 var bytes = Encoding.UTF8.GetBytes((item as SpecialMessage).Message);

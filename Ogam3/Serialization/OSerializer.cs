@@ -19,7 +19,7 @@ namespace Ogam3.Serialization {
         #region Serialize
 
         public static Cons Serialize(object data) {
-            return new Cons(new Symbol("quote"), Serialize(data, data.GetType()));
+            return new Cons(new Symbol("quote"), new Cons (Serialize(data, data.GetType())));
         }
 
         public static Cons Serialize(object data, Type t) {

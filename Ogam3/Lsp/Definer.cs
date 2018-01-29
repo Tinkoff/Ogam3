@@ -31,6 +31,27 @@ namespace Ogam3.Lsp {
                     var delegateType = Expression.GetDelegateType(funcArgs);
                     var callableDelegate = implMethod.CreateDelegate(delegateType, instanceOfImplementation);
 
+                    var shell = new Func<Params, object>((par) =>  { // TODO tmp solution reaplace atogenerated code
+                        var finalArgLst = new List<object>();
+
+                        for (var i = 0; i < par.Count; i++) {
+                            if (BinFormater.IsPrimitive(par[i].GetType())) {
+                                finalArgLst.Add(par[i]);
+                            }
+                            else {
+                                finalArgLst.Add(OSerializer.Deserialize(par[i] as Cons, funcArgs[i]));
+                            }
+                        }
+
+                        var result = callableDelegate.DynamicInvoke(finalArgLst.ToArray());
+
+                        if (BinFormater.IsPrimitive(result.GetType())) {
+                            return result;
+                        }
+
+                        return OSerializer.Serialize(callableDelegate.DynamicInvoke(finalArgLst.ToArray()));
+                    });
+
                     Func<string, bool> isEmpty = string.IsNullOrWhiteSpace;
 
                     var defineName = isEmpty(envAtt.EnviromentName)
@@ -41,7 +62,8 @@ namespace Ogam3.Lsp {
                         throw new Exception($"Name conflict '{defineName}' interface {interfaceType.FullName}");
                     }
 
-                    env.Define(defineName, callableDelegate);
+                    //env.Define(defineName, callableDelegate);
+                    env.Define(defineName, shell);
                 }
             }
         }
