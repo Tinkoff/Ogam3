@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Ogam3.Network;
 using Ogam3.Network.Tcp;
+using Ogam3.Serialization;
 
 namespace Ogam3.Lsp {
     static class Definer {
@@ -212,8 +213,8 @@ namespace Ogam3.Lsp {
                 //**************************************************
                 //**  TODO AT THIS LINE SHOULD BE THE SERIALIZER  **
                 //**************************************************
-
-                listBuilderParams.Add(new CodeArgumentReferenceExpression(arg.Name));
+                listBuilderParams.Add(new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(new CodeTypeReferenceExpression("OSerializer"),
+                    "Serialize"), new CodeArgumentReferenceExpression(arg.Name)));
             }
 
             var consLst = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Cons)), nameof(Cons.List), listBuilderParams.ToArray());
@@ -236,8 +237,11 @@ namespace Ogam3.Lsp {
                 //****************************************************
                 //**  TODO AT THIS LINE SHOULD BE THE DESERIALIZER  **
                 //****************************************************
-
-                var castType = new CodeCastExpression(returnType, requestResultRef);
+                var castType = new CodeCastExpression(returnType, new CodeMethodInvokeExpression(
+                    new CodeTypeReferenceExpression(typeof(OSerializer)),
+                    "Deserialize",
+                    requestResultRef,
+                    new CodeTypeOfExpression(returnType)));
 
                 CodeStatement returnDefaultValue = null;
                 if (returnType.IsValueType && Nullable.GetUnderlyingType(returnType) == null) {
