@@ -60,6 +60,22 @@ namespace Ogam3.Network.Tcp {
             Thread.SetData(Thread.GetNamedDataSlot(id), obj);
         }
 
+        public static byte[] DataHandler(Evaluator evl, byte[] data) {
+            var receive = BinFormater.Read(new MemoryStream(data));
+
+            try {
+                var res = evl.EvlSeq(receive);
+                if (res != null) {
+                    return BinFormater.Write(res).ToArray();
+                } else {
+                    return new byte[0];
+                }
+            } catch (Exception e) {
+                Console.WriteLine(e.Message);
+                return BinFormater.Write(new SpecialMessage(e)).ToArray();
+            }
+        }
+
         private void ClientConnection(object o) {
             var client = (TcpClient) o;
             var endpoint = (IPEndPoint) client.Client.RemoteEndPoint;
@@ -73,19 +89,7 @@ namespace Ogam3.Network.Tcp {
                 SetContextObj(ContextTcpClientId, client); // TODO single set
                 SetContextObj(ReClientId, new ReClient(server)); // TODO single set
 
-                var receive = BinFormater.Read(new MemoryStream(data));
-
-                try {
-                    var res = Evaluator.EvlSeq(receive);
-                    if (res != null) {
-                        return BinFormater.Write(res).ToArray();
-                    } else {
-                        return new byte[0];
-                    }
-                } catch (Exception e) {
-                    Console.WriteLine(e.Message);
-                    return BinFormater.Write(new SpecialMessage(e)).ToArray();
-                }
+                return DataHandler(Evaluator, data);
             });
         }
 

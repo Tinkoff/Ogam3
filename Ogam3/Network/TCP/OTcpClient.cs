@@ -83,23 +83,7 @@ namespace Ogam3.Network.Tcp {
                 }
             };
 
-            Transfering.StartReceiver(data => { // TODO should be server implementation
-                //Console.WriteLine($"Client receive {data.Length}Bt");
-                //return new byte[0];
-                var receive = BinFormater.Read(new MemoryStream(data));
-
-                try {
-                    var res = Evaluator.EvlSeq(receive);
-                    if (res != null) {
-                        return BinFormater.Write(res).ToArray();
-                    } else {
-                        return new byte[0];
-                    }
-                } catch (Exception e) {
-                    Console.WriteLine(e.Message);
-                    return BinFormater.Write(new SpecialMessage(e)).ToArray();
-                }
-            });
+            Transfering.StartReceiver(data => OTcpServer.DataHandler(Evaluator, data));
 
             _sendSync.Unlock();
         }
