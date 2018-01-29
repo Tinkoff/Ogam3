@@ -16,15 +16,10 @@ namespace Ogam3.Serialization {
         private static readonly Dictionary<Type, Func<Cons, object>> Deserializers =
             new Dictionary<Type, Func<Cons, object>>();
 
-        private static bool IsBaseType(Type t) {
-            return t.IsPrimitive || t == typeof(string) || t == typeof(DateTime) || t == typeof(decimal) ||
-                   t.IsSubclassOf(typeof(Stream));
-        }
-
         #region Serialize
 
         public static Cons Serialize(object data) {
-            return Serialize(data, data.GetType());
+            return new Cons(new Symbol("quote"), Serialize(data, data.GetType()));
         }
 
         public static Cons Serialize(object data, Type t) {
@@ -49,7 +44,7 @@ namespace Ogam3.Serialization {
                     collection?.Cast<object>()
                         .Aggregate(current,
                             (current1, item) =>
-                                current1.Add(IsBaseType(internalType)
+                                current1.Add(BinFormater.IsPrimitive(internalType)
                                     ? item
                                     : item == null ? null : Serialize(item, internalType)));
                     return result;
@@ -63,7 +58,7 @@ namespace Ogam3.Serialization {
                 return (obj) => {
                     if (obj == null)
                         return new Cons();
-                    return IsBaseType(internalType) ? new Cons(obj) : new Cons(Serialize(obj, internalType));
+                    return BinFormater.IsPrimitive(internalType) ? new Cons(obj) : new Cons(Serialize(obj, internalType));
                 };
             }
             return GeneratePropsAndFieldsSerializer(t);
@@ -93,8 +88,6 @@ namespace Ogam3.Serialization {
             serializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeof(Cons), "current",
                 new CodeVariableReferenceExpression("result")));
 
-            var toSymbolExpr = new CodeMethodReferenceExpression(new CodeTypeReferenceExpression("StingExtension"),
-                "ToSymbol");
             var serializeExpr =
                 new CodeMethodReferenceExpression(new CodeTypeReferenceExpression("OSerializer"),
                     "Serialize");
@@ -105,11 +98,11 @@ namespace Ogam3.Serialization {
 
                     if (f.IsLiteral)
                         continue;
-                    SerializeMember(f.FieldType, f.Name, serializeMethod, serializeExpr, toSymbolExpr);
+                    SerializeMember(f.FieldType, f.Name, serializeMethod, serializeExpr);
                 }
                 else if (mb is PropertyInfo) {
                     var p = (PropertyInfo) mb;
-                    SerializeMember(p.PropertyType, p.Name, serializeMethod, serializeExpr, toSymbolExpr);
+                    SerializeMember(p.PropertyType, p.Name, serializeMethod, serializeExpr);
                 }
             }
 
@@ -119,19 +112,20 @@ namespace Ogam3.Serialization {
             serializeMethod.Statements.Add(returnStatement);
             targetClass.Members.Add(serializeMethod);
 
-            var type = CompileUnit(t, targetUnit).CompiledAssembly.GetType(nameof(OSerializer));
+            var type = CompileUnit(t, targetUnit, "tmp").CompiledAssembly.GetType("Serialization.DSerializer");
             var method = type.GetMethod(methodName);
             return obj => (Cons) method?.Invoke(null, new[] {obj});
         }
 
         private static void SerializeMember(Type type, string name, CodeMemberMethod serializeMethod,
-            CodeMethodReferenceExpression serializeExpr, CodeMethodReferenceExpression toSymbolExpr) {
+            CodeMethodReferenceExpression serializeExpr) {
             var fieldExpr = new CodeFieldReferenceExpression(new CodeArgumentReferenceExpression("objCasted"), name);
             var fieldTypeExpr = new CodeTypeOfExpression(type);
             var serializeFieldExpr = new CodeMethodInvokeExpression(serializeExpr,
                 new CodeExpression[] {fieldExpr, fieldTypeExpr});
-            var toSymbolFieldExpr = new CodeMethodInvokeExpression(toSymbolExpr,
-                new CodeExpression[] {new CodePrimitiveExpression(name)});
+
+            var toSymbolExpr = new CodeObjectCreateExpression(typeof(Symbol));
+            toSymbolExpr.Parameters.Add(new CodePrimitiveExpression(name));
 
             if (type.GetInterfaces().Any(ie => ie == typeof(ICollection))) {
                 serializeMethod.Statements.Add(
@@ -144,7 +138,7 @@ namespace Ogam3.Serialization {
                                     "Add",
                                     new[] {
                                         new CodeObjectCreateExpression(typeof(Cons),
-                                            toSymbolFieldExpr,
+                                            toSymbolExpr,
                                             new CodePrimitiveExpression(null)
                                         )
                                     })),
@@ -154,19 +148,19 @@ namespace Ogam3.Serialization {
                                     "Add",
                                     new[] {
                                         new CodeObjectCreateExpression(typeof(Cons),
-                                            toSymbolFieldExpr,
+                                            toSymbolExpr,
                                             new CodeObjectCreateExpression(typeof(Cons), serializeFieldExpr)
                                         )
                                     }))
                         }));
             }
-            else if (IsBaseType(type)) {
+            else if (BinFormater.IsPrimitive(type)) {
                 serializeMethod.Statements.Add(
                     new CodeAssignStatement(new CodeVariableReferenceExpression("current"),
                         new CodeMethodInvokeExpression(new CodeVariableReferenceExpression("current"), "Add",
                             new CodeExpression[] {
                                 new CodeObjectCreateExpression(typeof(Cons),
-                                    toSymbolFieldExpr,
+                                    toSymbolExpr,
                                     fieldExpr)
                             })));
             }
@@ -180,7 +174,7 @@ namespace Ogam3.Serialization {
                                     "Add",
                                     new CodeExpression[] {
                                         new CodeObjectCreateExpression(typeof(Cons),
-                                            toSymbolFieldExpr,
+                                            toSymbolExpr,
                                             new CodePrimitiveExpression(null))
                                     }))
                         }, new[] {
@@ -189,7 +183,7 @@ namespace Ogam3.Serialization {
                                     "Add",
                                     new CodeExpression[] {
                                         new CodeObjectCreateExpression(typeof(Cons),
-                                            toSymbolFieldExpr,
+                                            toSymbolExpr,
                                             serializeFieldExpr)
                                     }))
                         }));
@@ -204,7 +198,7 @@ namespace Ogam3.Serialization {
             if (data == null)
                 return null;
 
-            if (IsBaseType(t))
+            if (BinFormater.IsPrimitive(t))
                 throw new ArgumentException(
                     "This method should not be used with base types (Primitive, Decimal, String, DateTime)");
 
@@ -251,7 +245,7 @@ namespace Ogam3.Serialization {
                         new CodeGotoStatement("outOfLoop")
                     }));
 
-                if (IsBaseType(internalType))
+                if (BinFormater.IsPrimitive(internalType))
                     deserializeMethod.Statements.Add(new CodeVariableDeclarationStatement(internalType, "elem",
                         new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)),
                             $"To{internalType.Name}",
@@ -295,7 +289,7 @@ namespace Ogam3.Serialization {
             }
             else if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>)) {
                 var internalType = t.GetInterface("ICollection`1").GetGenericArguments()[0];
-                if (IsBaseType(internalType))
+                if (BinFormater.IsPrimitive(internalType))
                     deserializeMethod.Statements.Add(new CodeAssignStatement(
                         new CodeVariableReferenceExpression("result"),
                         new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)),
@@ -316,7 +310,7 @@ namespace Ogam3.Serialization {
                 deserializeMethod.Statements.Add(new CodeVariableDeclarationStatement(internalType1, "key"));
                 deserializeMethod.Statements.Add(new CodeVariableDeclarationStatement(internalType2, "value"));
 
-                if (IsBaseType(internalType1))
+                if (BinFormater.IsPrimitive(internalType1))
                     deserializeMethod.Statements.Add(new CodeAssignStatement(
                         new CodeVariableReferenceExpression("key"),
                         new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)),
@@ -340,7 +334,7 @@ namespace Ogam3.Serialization {
                 deserializeMethod.Statements.Add(
                     new CodeMethodInvokeExpression(new CodeArgumentReferenceExpression("pair"), "MoveNext"));
 
-                if (IsBaseType(internalType2))
+                if (BinFormater.IsPrimitive(internalType2))
                     deserializeMethod.Statements.Add(new CodeAssignStatement(
                         new CodeVariableReferenceExpression("value"),
                         new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)),
@@ -424,7 +418,7 @@ namespace Ogam3.Serialization {
             deserializeMethod.Statements.Add(returnStatement);
             targetClass.Members.Add(deserializeMethod);
 
-            var type = CompileUnit(t, targetUnit).CompiledAssembly.GetType(nameof(OSerializer));
+            var type = CompileUnit(t, targetUnit, "tmp").CompiledAssembly.GetType(nameof(OSerializer));
             var method = type.GetMethod(methodName);
             return pair => method?.Invoke(null, new[] {pair});
         }
@@ -466,7 +460,7 @@ namespace Ogam3.Serialization {
                                 new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("p"), "Cdr"))),
                         new CodeGotoStatement("insideLoop")
                     }));
-            else if (IsBaseType(memberType))
+            else if (BinFormater.IsPrimitive(memberType))
                 deserializeMethod.Statements.Add(new CodeConditionStatement(
                     new CodeBinaryOperatorExpression(new CodeMethodInvokeExpression(
                             new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("car"), "Car"),
@@ -525,10 +519,11 @@ namespace Ogam3.Serialization {
         #endregion
 
         public static List<string> RequiredNamespaces = new List<string>() {
-            nameof(System.Collections.Generic),
-            nameof(System.Collections),
-            nameof(System.Linq),
-            nameof(Ogam3)
+            "System.Collections.Generic",
+            "System.Collections",
+            "System.Linq",
+            "Ogam3",
+            "Ogam3.Serialization"
         };
 
         private static CodeNamespace GetCodeNameSpace(Type t) {
@@ -544,7 +539,7 @@ namespace Ogam3.Serialization {
         }
 
         private static CodeTypeDeclaration GetCodeTypeDeclaration() {
-            return new CodeTypeDeclaration("OSerializer") {
+            return new CodeTypeDeclaration("DSerializer") {
                 IsClass = true,
                 IsPartial = true,
                 TypeAttributes = TypeAttributes.Public | TypeAttributes.Sealed
@@ -561,13 +556,13 @@ namespace Ogam3.Serialization {
             foreach (var mb in t.GetMembers(BindingFlags.Instance | BindingFlags.Public)) {
                 if (mb is FieldInfo) {
                     var f = (FieldInfo) mb;
-                    if (IsBaseType(f.FieldType))
+                    if (BinFormater.IsPrimitive(f.FieldType))
                         continue;
                     res.AddRange(GetTypeNamespaces(f.FieldType));
                 }
                 else if (mb is PropertyInfo) {
                     var p = (PropertyInfo) mb;
-                    if (IsBaseType(p.PropertyType))
+                    if (BinFormater.IsPrimitive(p.PropertyType))
                         continue;
                     res.AddRange(GetTypeNamespaces(p.PropertyType));
                 }
