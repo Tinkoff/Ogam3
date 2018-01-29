@@ -9,7 +9,7 @@ using System.Reflection;
 using Ogam3.Lsp;
 
 namespace Ogam3.Serialization {
-    partial class OSerializer {
+    public class OSerializer {
         private static readonly Dictionary<Type, Func<object, Cons>> Serializers =
             new Dictionary<Type, Func<object, Cons>>();
 
@@ -23,10 +23,8 @@ namespace Ogam3.Serialization {
 
         #region Serialize
 
-        public static string Serialize(object data) {
-            if (data == null) return "#nil";
-            var t = data.GetType();
-            return IsBaseType(t) ? Cons.O2String(data) : "'" + Serialize(data, t);
+        public static Cons Serialize(object data) {
+            return Serialize(data, data.GetType());
         }
 
         public static Cons Serialize(object data, Type t) {
@@ -606,8 +604,10 @@ namespace Ogam3.Serialization {
             if (cr.Errors.Count <= 0) return cr;
 
             var e = new Exception("Error in OSerializer dynamic compile module. See details in data property...");
-            foreach (CompilerError ce in cr.Errors)
+            foreach (CompilerError ce in cr.Errors) {
                 e.Data[ce.ErrorNumber] = $"{t.Assembly}|{t.Name}  {ce}";
+            }
+
             throw e;
         }
     }

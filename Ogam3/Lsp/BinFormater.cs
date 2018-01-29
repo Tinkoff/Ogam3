@@ -30,6 +30,24 @@ namespace Ogam3.Lsp {
             public const byte SpecialMessage = (byte)'e';
         }
 
+        public static bool IsPrimitive(Type t) {
+            return
+                t == typeof(ushort)
+                || t == typeof(short)
+                || t == typeof(uint)
+                || t == typeof(int)
+                || t == typeof(ulong)
+                || t == typeof(long)
+                || t == typeof(float)
+                || t == typeof(double)
+                || t == typeof(byte)
+                || t == typeof(bool)
+                || t == typeof(string)
+                || t == typeof(Stream)
+                || t == typeof(DateTime)
+                || t == typeof(SpecialMessage);
+        }
+
         public static Cons Read(MemoryStream data) {
             var stack = new Stack<dynamic>();
             var root = new Cons();

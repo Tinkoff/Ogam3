@@ -9,6 +9,8 @@ namespace CommonInterface {
         void WriteMessage(string text);
 
         void NotImplemented();
+
+        ExampleDTO TestSerializer(ExampleDTO dto);
     }
 
     [Enviroment ("client-side")]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -32,6 +33,17 @@ namespace TcpClient {
             pc.WriteMessage("Hello server!");
 
             pc.NotImplemented();
+
+            var dto = new ExampleDTO() {
+                DateTimeValue = DateTime.Now
+                , DoubleValue = 11.33
+                , IntegerValue = 1133
+                , StringValue = "String message"
+                //, IntList = new List<int>(){1,2,3,4,5,6,7}
+                , StreamValue = new MemoryStream(new byte[]{2, 4, 8, 16, 32, 64, 128})
+            };
+
+            var echoDto = pc.TestSerializer(dto);
 
             while (true) {
                 Console.Write("CLI > ");

@@ -213,8 +213,18 @@ namespace Ogam3.Lsp {
                 //**************************************************
                 //**  TODO AT THIS LINE SHOULD BE THE SERIALIZER  **
                 //**************************************************
-                listBuilderParams.Add(new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(new CodeTypeReferenceExpression("OSerializer"),
-                    "Serialize"), new CodeArgumentReferenceExpression(arg.Name)));
+
+                if (BinFormater.IsPrimitive(arg.ParameterType)) {
+                    listBuilderParams.Add(new CodeArgumentReferenceExpression(arg.Name));
+                }
+                else {
+                    listBuilderParams.Add(
+                        new CodeMethodInvokeExpression(
+                            new CodeMethodReferenceExpression(
+                                new CodeTypeReferenceExpression(typeof(OSerializer))
+                                , nameof(OSerializer.Serialize))
+                            , new CodeArgumentReferenceExpression(arg.Name)));
+                }
             }
 
             var consLst = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Cons)), nameof(Cons.List), listBuilderParams.ToArray());
@@ -237,11 +247,19 @@ namespace Ogam3.Lsp {
                 //****************************************************
                 //**  TODO AT THIS LINE SHOULD BE THE DESERIALIZER  **
                 //****************************************************
-                var castType = new CodeCastExpression(returnType, new CodeMethodInvokeExpression(
-                    new CodeTypeReferenceExpression(typeof(OSerializer)),
-                    "Deserialize",
-                    requestResultRef,
-                    new CodeTypeOfExpression(returnType)));
+                CodeExpression prepareResult = null;
+                if (BinFormater.IsPrimitive(returnType)) {
+                    prepareResult = requestResultRef;
+                }
+                else {
+                    prepareResult = new CodeMethodInvokeExpression(
+                        new CodeTypeReferenceExpression(typeof(OSerializer))
+                        , nameof(OSerializer.Deserialize)
+                        , new CodeCastExpression (typeof(Cons), requestResultRef)
+                        , new CodeTypeOfExpression(returnType));
+                }
+
+                var castType = new CodeCastExpression(returnType, prepareResult);
 
                 CodeStatement returnDefaultValue = null;
                 if (returnType.IsValueType && Nullable.GetUnderlyingType(returnType) == null) {

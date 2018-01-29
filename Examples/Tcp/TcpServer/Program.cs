@@ -50,5 +50,9 @@ namespace TcpServer {
         public void NotImplemented() {
             throw new NotImplementedException();
         }
+
+        public ExampleDTO TestSerializer(ExampleDTO dto) {
+            return dto;
+        }
     }
 }
