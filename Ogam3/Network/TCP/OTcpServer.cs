@@ -13,7 +13,7 @@ namespace Ogam3.Network.Tcp {
         private readonly TcpListener _listener;
         private Thread listerThread;
         public uint BufferSize = 1048576;
-        public Evaluator Evaluator;
+        private Evaluator Evaluator;
 
         public OTcpServer(int port, Evaluator evaluator = null) {
             if (evaluator == null) {
@@ -23,7 +23,7 @@ namespace Ogam3.Network.Tcp {
             _listener = new TcpListener(IPAddress.Any, port);
             _listener.Start();
 
-            Evaluator.DefaultEnviroment.Define("get-context-tcp-client", new Func<dynamic>(() => GetContextTcpClient()));
+            Evaluator.DefaultEnviroment.Define("get-context-tcp-client", new Func<dynamic>(() => ContexTcpClient));
 
             listerThread = new Thread(ListenerHandler);
             listerThread.IsBackground = true;
@@ -45,18 +45,19 @@ namespace Ogam3.Network.Tcp {
             }
         }
 
-        private static string ContextTcpClient = "context-tcp-client";
+        private static string ContextTcpClientId = "context-tcp-client";
+        private static string ReClientId = "context-re-client";
 
-        public static TcpClient GetContextTcpClient() {
-            return Thread.GetData(Thread.GetNamedDataSlot(ContextTcpClient)) as TcpClient;
+        public static object GetContextObj(string id) {
+            return Thread.GetData(Thread.GetNamedDataSlot(id));
         }
 
-        public static IPEndPoint GetContextTcpEndPoint() {
-            return (IPEndPoint)GetContextTcpClient()?.Client?.RemoteEndPoint;
-        }
+        public static TcpClient ContexTcpClient => (TcpClient) GetContextObj(ContextTcpClientId);
+        public static IPEndPoint ContextTcpEndPoint => (IPEndPoint)ContexTcpClient?.Client?.RemoteEndPoint;
+        public static ReClient ContexReClient => (ReClient) GetContextObj(ReClientId);
 
-        private static void SetContextTcpClient(TcpClient client) {
-            Thread.SetData(Thread.GetNamedDataSlot(ContextTcpClient), client);
+        private static void SetContextObj(string id, object obj) {
+            Thread.SetData(Thread.GetNamedDataSlot(id), obj);
         }
 
         private void ClientConnection(object o) {
@@ -67,8 +68,10 @@ namespace Ogam3.Network.Tcp {
             var ns = new NetStream(client);
 
             var server = new Transfering(ns, ns, BufferSize);
+
             server.StartReceiver(data => {
-                SetContextTcpClient(client);
+                SetContextObj(ContextTcpClientId, client); // TODO single set
+                SetContextObj(ReClientId, new ReClient(server)); // TODO single set
 
                 var receive = BinFormater.Read(new MemoryStream(data));
 
@@ -84,6 +87,22 @@ namespace Ogam3.Network.Tcp {
                     return BinFormater.Write(new SpecialMessage(e)).ToArray();
                 }
             });
+        }
+
+        public class ReClient : ISomeClient {
+            private Transfering _transfering;
+
+            public ReClient(Transfering transfering) {
+                _transfering = transfering;
+            }
+
+            public T CreateInterfase<T>() {
+                return (T)Definer.CreateTcpCaller(typeof(T), this);
+            }
+
+            public object Call(object seq) {
+                return BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
+            }
         }
     }
 }

@@ -14,6 +14,8 @@ namespace TcpClient {
         static void Main(string[] args) {
             var cli = new OTcpClient("localhost", 1010);
 
+            cli.RegisterImplementation(new ClientLogigImplementation());
+
             cli.SpecialMessageEvt += (message, o) => {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($">> {o}");
@@ -21,10 +23,11 @@ namespace TcpClient {
                 Console.ResetColor();
             };
 
-            var pc = cli.CreateInterfase<IExampleInterface>();
+            var pc = cli.CreateInterfase<IServerSide>();
 
             Console.WriteLine($"pc.IntSumm(11, 33) = {pc.IntSumm(11, 33)}");
             Console.WriteLine($"pc.DoubleSumm(1.1, 3.3) = {pc.DoubleSumm(1.1, 3.3)}");
+            Console.WriteLine($"pc.IntSummOfPower(11, 33) = {pc.IntSummOfPower(11, 33)}");
 
             pc.WriteMessage("Hello server!");
 
@@ -36,6 +39,12 @@ namespace TcpClient {
                 var result = cli.Call(seq.Car());
                 Console.WriteLine($"RES > {result ?? "null"}");
             }
+        }
+    }
+
+    class ClientLogigImplementation : IClientSide {
+        public int Power(int x) {
+            return x * x;
         }
     }
 }

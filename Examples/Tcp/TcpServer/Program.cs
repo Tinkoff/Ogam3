@@ -27,9 +27,14 @@ namespace TcpServer {
     }
 
 
-    class ServerLogigImplementation : IExampleInterface {
+    class ServerLogigImplementation : IServerSide {
         public int IntSumm(int a, int b) {
             return a + b;
+        }
+
+        public int IntSummOfPower(int a, int b) {
+            var pc = OTcpServer.ContexReClient.CreateInterfase<IClientSide>();
+            return pc.Power(a) + pc.Power(b);
         }
 
         public double DoubleSumm(double a, double b) {

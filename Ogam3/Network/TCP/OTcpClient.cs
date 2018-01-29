@@ -16,13 +16,18 @@ namespace Ogam3.Network.Tcp {
         private static int timeout = 60000;
         public uint BufferSize = 1048576;
         public NetworkStream Stream;
+        private Evaluator Evaluator;
 
         private readonly Synchronizer _connSync = new Synchronizer(true);
         private readonly Synchronizer _sendSync = new Synchronizer(true);
 
-        public OTcpClient(string host, int port) {
+        public OTcpClient(string host, int port, Evaluator evaluator = null) {
             Host = host;
             Port = port;
+
+            if (evaluator == null) {
+                Evaluator = new Evaluator();
+            }
 
             new Thread(() => {
                 while (true) {
@@ -34,6 +39,10 @@ namespace Ogam3.Network.Tcp {
 
         public T CreateInterfase<T>() {
             return (T)Definer.CreateTcpCaller(typeof(T), this);
+        }
+
+        public void RegisterImplementation(object instanceOfImplementation) {
+            Definer.Define(Evaluator.DefaultEnviroment, instanceOfImplementation);
         }
 
         private TcpClient ConnectTcp() {
@@ -74,9 +83,22 @@ namespace Ogam3.Network.Tcp {
                 }
             };
 
-            Transfering.StartReceiver(data => {
-                Console.WriteLine($"Client receive {data.Length}Bt");
-                return new byte[0];
+            Transfering.StartReceiver(data => { // TODO should be server implementation
+                //Console.WriteLine($"Client receive {data.Length}Bt");
+                //return new byte[0];
+                var receive = BinFormater.Read(new MemoryStream(data));
+
+                try {
+                    var res = Evaluator.EvlSeq(receive);
+                    if (res != null) {
+                        return BinFormater.Write(res).ToArray();
+                    } else {
+                        return new byte[0];
+                    }
+                } catch (Exception e) {
+                    Console.WriteLine(e.Message);
+                    return BinFormater.Write(new SpecialMessage(e)).ToArray();
+                }
             });
 
             _sendSync.Unlock();

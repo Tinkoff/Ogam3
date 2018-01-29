@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Ogam3.Utils;
 
 namespace Ogam3.TxRx {
-    class Transfering : IDisposable {
+    public class Transfering : IDisposable {
         private Stream _sendStream;
         private Stream _receiveStream;
         private uint _quantSize;

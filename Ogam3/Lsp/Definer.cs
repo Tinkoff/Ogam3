@@ -56,38 +56,52 @@ namespace Ogam3.Lsp {
             return CreateSrc(codeRoot);
         }
 
+        private static Dictionary<string, Type> _callerTypeStore = new Dictionary<string, Type>();
+
         public static object CreateTcpCaller(Type serverInterface, ISomeClient client) {
-            var code = GenerateSharpCode(serverInterface, client);
+            //var code = GenerateSharpCode(serverInterface, client);
 
             var instantName = "RC" + client.GetType().Name + serverInterface.Name;
             var nameSpaceName = client.GetType().Name + "Caller";
 
-            var codeRoot = CreateDomObject(serverInterface, client, nameSpaceName, instantName);
+            var fullName = $"{nameSpaceName}.{instantName}";
 
-            var compiler = CodeDomProvider.CreateProvider("CSharp");
+            Type callerType = null;
+            lock (_callerTypeStore) { // TODO improve lock
+                if (_callerTypeStore.TryGetValue(fullName, out callerType)) {
+                    return Activator.CreateInstance(callerType, client);
+                }
 
-            var DOMref =
-                AppDomain.CurrentDomain.GetAssemblies()
-                    .Where(obj => !obj.IsDynamic)
-                    .Select(obj => obj.Location)
-                    .ToList();
+                var codeRoot = CreateDomObject(serverInterface, client, nameSpaceName, instantName);
 
-            var currentAssembly = Assembly.GetExecutingAssembly();
-            DOMref.Add(currentAssembly.Location);
+                var compiler = CodeDomProvider.CreateProvider("CSharp");
 
-            var compilerParams = new CompilerParameters(DOMref.ToArray());
-            compilerParams.GenerateInMemory = true;
-            compilerParams.GenerateExecutable = false;
-            compilerParams.IncludeDebugInformation = false;
+                var DOMref =
+                    AppDomain.CurrentDomain.GetAssemblies()
+                        .Where(obj => !obj.IsDynamic)
+                        .Select(obj => obj.Location)
+                        .ToList();
 
-            var cr = compiler.CompileAssemblyFromDom(compilerParams, codeRoot);
+                var currentAssembly = Assembly.GetExecutingAssembly();
+                DOMref.Add(currentAssembly.Location);
 
-            foreach (var ce in cr.Errors) {
-                throw new Exception(ce.ToString());
+                var compilerParams = new CompilerParameters(DOMref.ToArray());
+                compilerParams.GenerateInMemory = true;
+                compilerParams.GenerateExecutable = false;
+                compilerParams.IncludeDebugInformation = false;
+
+                var cr = compiler.CompileAssemblyFromDom(compilerParams, codeRoot);
+
+                foreach (var ce in cr.Errors) {
+                    throw new Exception(ce.ToString());
+                }
+
+                callerType = cr.CompiledAssembly.GetType($"{nameSpaceName}.{instantName}");
+
+                _callerTypeStore[fullName] = callerType;
             }
 
-            var type = cr.CompiledAssembly.GetType($"{nameSpaceName}.{instantName}");
-            return Activator.CreateInstance(type, client);
+            return Activator.CreateInstance(callerType, client);
         }
 
         static CodeCompileUnit CreateDomObject(Type serverInterface, ISomeClient client, string nameSpaceName, string instantName) {
