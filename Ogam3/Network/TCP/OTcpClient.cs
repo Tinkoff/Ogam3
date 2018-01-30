@@ -96,13 +96,15 @@ namespace Ogam3.Network.Tcp {
 
         public object Call(object seq) {
             if (_sendSync.Wait(5000)) {
-                var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
-                if (resp is SpecialMessage) {
-                    OnSpecialMessageEvt(resp as SpecialMessage, seq);
+                var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray())));
+                if (resp.Car() is SpecialMessage) {
+                    OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);
                     return null;
+                } else if (resp is Cons) {
+                    return Evaluator.EvlSeq(resp);
                 }
 
-                return resp;
+                return resp.Car();
             }
             else {
                 // TODO connection was broken
