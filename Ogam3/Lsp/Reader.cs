@@ -20,6 +20,22 @@ namespace Ogam3.Lsp {
             var isDot = false; // подумать
             var word = "";
 
+            var set = new Action<object>(o => {
+                if (isDot) {
+                    var cons = stack.Peek() as Cons;
+                    if (cons != null) {
+                        cons.SetCdr(o);
+                    }
+                    else {
+                        Console.WriteLine("ERROR 39");
+                    }
+                    isDot = false;
+                }
+                else {
+                    stack.Peek().Add(o);
+                }
+            });
+
             foreach (var c in str) {
                 switch (state) {
                     case ReadState.Normal: {
@@ -30,19 +46,20 @@ namespace Ogam3.Lsp {
                         }
                         else if (c == ')') {
                             if (!string.IsNullOrWhiteSpace(word)) {
-                                if (isDot) {
-                                    var cons = stack.Peek() as Cons;
-                                    if (cons != null) {
-                                        cons.SetCdr(ParseSymbol(word));
-                                    }
-                                    else {
-                                        Console.WriteLine("ERROR 39");
-                                    }
-                                    isDot = false;
-                                }
-                                else {
-                                    stack.Peek().Add(ParseSymbol(word));
-                                }
+                                //if (isDot) {
+                                //    var cons = stack.Peek() as Cons;
+                                //    if (cons != null) {
+                                //        cons.SetCdr(ParseSymbol(word));
+                                //    }
+                                //    else {
+                                //        Console.WriteLine("ERROR 39");
+                                //    }
+                                //    isDot = false;
+                                //}
+                                //else {
+                                //    stack.Peek().Add(ParseSymbol(word));
+                                //}
+                                set(ParseSymbol(word));
                                 word = "";
                             }
 
@@ -71,7 +88,8 @@ namespace Ogam3.Lsp {
                         }
                         else if (c == '\'') {
                             var nod = new Cons(new Symbol("quote"));
-                            stack.Peek().Add(nod);
+                            //stack.Peek().Add(nod);
+                            set(nod);
                             stack.Push(nod);
                         }
                         else {
@@ -89,17 +107,20 @@ namespace Ogam3.Lsp {
                         switch (c) {
                             case 'T':
                             case 't':
-                                stack.Peek().Add(true);
+                                //stack.Peek().Add(true);
+                                set(true);
                                 state = ReadState.Normal;
                                 break;
                             case 'F':
                             case 'f':
-                                stack.Peek().Add(false);
+                                //stack.Peek().Add(false);
+                                set(false);
                                 state = ReadState.Normal;
                                 break;
                             case '(': {
                                 var nod = new Cons(new Symbol("vector"));
-                                stack.Peek().Add(nod);
+                                //stack.Peek().Add(nod);
+                                set(nod);
                                 stack.Push(nod);
                                 state = ReadState.Normal;
                                 break;
@@ -111,13 +132,15 @@ namespace Ogam3.Lsp {
                         break;
                     }
                     case ReadState.Charter: {
-                        stack.Peek().Add(c);
+                        //stack.Peek().Add(c);
+                        set(c);
                         state = ReadState.Normal;
                         break;
                     }
                     case ReadState.String: { // in string
                         if (c == '\"') {
-                            stack.Peek().Add(word);
+                            //stack.Peek().Add(word);
+                            set(word);
                             word = "";
                             state = ReadState.Normal;
                         }
@@ -130,7 +153,8 @@ namespace Ogam3.Lsp {
             } // forech c
 
             if (!string.IsNullOrWhiteSpace(word)) {
-                stack.Peek().Add(state == ReadState.String ? word : ParseSymbol(word));
+                set(state == ReadState.String ? word : ParseSymbol(word));
+                //stack.Peek().Add(state == ReadState.String ? word : ParseSymbol(word));
             }
 
             return root;

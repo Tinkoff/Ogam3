@@ -224,11 +224,33 @@ namespace Ogam3.Serialization {
         }
 
         private static CodeExpression MConverter(Type memberType, CodeExpression arg) {
-            if (memberType == typeof(Stream)) {
+            if (memberType == typeof(MemoryStream)) {
                 return arg;
             }
 
             return new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)), $"To{memberType.Name}", arg);
+        }
+
+        private static int _varCount;
+        private static CodeExpression MSafeCasting(Type targetType, CodeExpression exp, List<CodeStatement> statement) {
+
+            CodeExpression typeDefaultValue = null;
+            if (targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null) { // if value type create constructor for default value
+                typeDefaultValue = new CodeObjectCreateExpression(targetType);
+            }
+            else { // else should be null
+                typeDefaultValue = new CodePrimitiveExpression(null);
+            }
+
+            var testNullValue = new CodeBinaryOperatorExpression(exp, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression(null));
+
+            var varName = $"tmpVar_{_varCount++}";
+            statement.Add(new CodeVariableDeclarationStatement(targetType, varName));
+            var varRef = new CodeVariableReferenceExpression(varName);
+            statement.Add(new CodeConditionStatement(testNullValue, new[] {new CodeAssignStatement(varRef, typeDefaultValue)}, new[] {new CodeAssignStatement(varRef, new CodeCastExpression(targetType, exp))}));
+            //var conditionalStatement = new CodeConditionStatement(testNullValue, new[] {new CodeMethodReturnStatement(typeDefaultValue)}, new[] {new CodeMethodReturnStatement(new CodeCastExpression(targetType, exp))});
+
+            return varRef;
         }
 
 
@@ -237,6 +259,8 @@ namespace Ogam3.Serialization {
 
             CodeNamespace samples = GetCodeNameSpace(t);
             var targetClass = GetCodeTypeDeclaration();
+
+            var fullClassName = $"{samples.Name}.{targetClass.Name}";
 
             samples.Types.Add(targetClass);
             targetUnit.Namespaces.Add(samples);
@@ -426,7 +450,8 @@ namespace Ogam3.Serialization {
             deserializeMethod.Statements.Add(returnStatement);
             targetClass.Members.Add(deserializeMethod);
 
-            var type = CompileUnit(t, targetUnit, "deser").CompiledAssembly.GetType(nameof(OSerializer));
+            //var type = CompileUnit(t, targetUnit, "deser").CompiledAssembly.GetType(nameof(OSerializer));
+            var type = CompileUnit(t, targetUnit, "deser").CompiledAssembly.GetType(fullClassName);
             var method = type.GetMethod(methodName);
             return pair => method?.Invoke(null, new[] {pair});
         }
@@ -460,21 +485,25 @@ namespace Ogam3.Serialization {
                                 MCdr(new CodeVariableReferenceExpression("p")))),
                         new CodeGotoStatement("insideLoop")
                     }));
-            else if (BinFormater.IsPrimitive(memberType))
-                deserializeMethod.Statements.Add(new CodeConditionStatement(
-                    new CodeBinaryOperatorExpression(new CodeMethodInvokeExpression(
-                            MCar(new CodeVariableReferenceExpression("car")),"ToString"),
-                        CodeBinaryOperatorType.IdentityEquality,
-                        new CodePrimitiveExpression(name)), new CodeStatement[] {
-                        new CodeAssignStatement(
-                            new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"),
-                                $"{name}"), new CodeCastExpression(memberType,
-                                MConverter(memberType, MCdr( new CodeArgumentReferenceExpression("car"))))),
-                        new CodeAssignStatement(new CodeVariableReferenceExpression("p"),
-                            new CodeCastExpression(typeof(Cons),
-                                MCdr(new CodeVariableReferenceExpression("p")))),
-                        new CodeGotoStatement("insideLoop")
-                    }));
+            else if (BinFormater.IsPrimitive(memberType)) {
+
+                var codeStat = new List<CodeStatement>();
+                codeStat.Add(new CodeAssignStatement(new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"), $"{name}"), MSafeCasting(memberType,MConverter(memberType, MCdr(new CodeArgumentReferenceExpression("car"))), codeStat)));
+
+                //codeStat.Add(new CodeAssignStatement(new CodeVariableReferenceExpression("p"), new CodeCastExpression(typeof(Cons), MCdr(new CodeVariableReferenceExpression("p")))));
+                codeStat.Add(new CodeAssignStatement(new CodeVariableReferenceExpression("p"), MSafeCasting(typeof(Cons), MCdr(new CodeVariableReferenceExpression("p")), codeStat)));
+                codeStat.Add(new CodeGotoStatement("insideLoop"));
+
+                deserializeMethod.Statements.Add(
+                    new CodeConditionStatement(
+                        new CodeBinaryOperatorExpression(
+                            new CodeMethodInvokeExpression(
+                                MCar(new CodeVariableReferenceExpression("car")),
+                                "ToString"), 
+                            CodeBinaryOperatorType.IdentityEquality, 
+                            new CodePrimitiveExpression(name)),
+                        codeStat.ToArray()));
+            }
             else
                 deserializeMethod.Statements.Add(new CodeConditionStatement(
                     new CodeBinaryOperatorExpression(new CodeMethodInvokeExpression(

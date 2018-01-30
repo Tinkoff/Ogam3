@@ -11,7 +11,7 @@ namespace CommonInterface {
         public DateTime DateTimeValue;
         public int IntegerValue;
         public double DoubleValue;
-        public Stream StreamValue;
+        public MemoryStream StreamValue;
         //public List<int> IntList;
     }
 }

@@ -44,7 +44,7 @@ namespace Ogam3.Lsp {
                 || t == typeof(byte)
                 || t == typeof(bool)
                 || t == typeof(string)
-                || t == typeof(Stream)
+                || t == typeof(MemoryStream)
                 || t == typeof(DateTime)
                 || t == typeof(SpecialMessage);
         }
@@ -266,7 +266,7 @@ namespace Ogam3.Lsp {
                 writeCode(Codes.String);
                 MsWrite(ms, BitConverter.GetBytes((int)bytes.Length));
                 MsWrite(ms, bytes);
-            } else if (item is Stream) {
+            } else if (item is MemoryStream) {
                 var bytes = ReadFully(item as Stream);
                 writeCode(Codes.StreamShort);
                 MsWrite(ms, BitConverter.GetBytes((uint)bytes.Length));

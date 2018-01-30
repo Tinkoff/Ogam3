@@ -265,8 +265,7 @@ namespace Ogam3.Lsp {
                     new CodeVariableDeclarationStatement(typeof(object), requestResultVarName, invoke));
                 var requestResultRef = new CodeVariableReferenceExpression(requestResultVarName);
 
-                var eql = new CodeBinaryOperatorExpression(requestResultRef, CodeBinaryOperatorType.ValueEquality,
-                    new CodePrimitiveExpression(null));
+                var eql = new CodeBinaryOperatorExpression(requestResultRef, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression(null));
 
                 //****************************************************
                 //**  TODO AT THIS LINE SHOULD BE THE DESERIALIZER  **
