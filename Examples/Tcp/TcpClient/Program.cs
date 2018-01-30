@@ -33,7 +33,7 @@ namespace TcpClient {
 
             pc.WriteMessage("Hello server!");
 
-            pc.NotImplemented();
+            //pc.NotImplemented();
 
             var dto = new ExampleDTO() {
                 DateTimeValue = DateTime.Now

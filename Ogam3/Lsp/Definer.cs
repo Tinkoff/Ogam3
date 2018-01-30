@@ -45,6 +45,8 @@ namespace Ogam3.Lsp {
 
                         var result = callableDelegate.DynamicInvoke(finalArgLst.ToArray());
 
+                        if (result == null) return null;
+
                         if (BinFormater.IsPrimitive(result.GetType())) {
                             return result;
                         }
