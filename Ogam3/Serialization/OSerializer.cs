@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Ogam3.Lsp;
 
 namespace Ogam3.Serialization {
@@ -26,7 +27,7 @@ namespace Ogam3.Serialization {
         public static Cons Serialize(object obj, Type typeParam) {
             return obj == null
                 ? new Cons()
-                : Serializers.GetOrAdd(typeParam, type => new Lazy<Func<object, Cons>>(() => GenerateSerializer(type)))?
+                : Serializers.GetOrAdd(typeParam, type => new Lazy<Func<object, Cons>>(() => GenerateSerializer(type), LazyThreadSafetyMode.ExecutionAndPublication))?
                     .Value(obj);
         }
 
@@ -63,60 +64,68 @@ namespace Ogam3.Serialization {
         public static Func<object, Cons> GeneratePropsAndFieldsSerializer(Type typeParam) {
             var targetUnit = new CodeCompileUnit();
 
-            var samples = GetCodeNameSpace(typeParam);
-            var targetClass = GetCodeTypeDeclaration();
+            var sampleNamespace = GetCodeNameSpace(typeParam);
+            var sampleClass = GetCodeTypeDeclaration();
 
-            samples.Types.Add(targetClass);
-            targetUnit.Namespaces.Add(samples);
+            sampleNamespace.Types.Add(sampleClass);
+            targetUnit.Namespaces.Add(sampleNamespace);
 
-            var methodName = $"Serialize{typeParam.GetHashCode()}";
+            var methodName = $"{nameof(Serialize)}{typeParam.GetHashCode()}";
+            {
+                CodeMemberMethod serializeMethod = new CodeMemberMethod {
+                    Attributes = MemberAttributes.Public | MemberAttributes.Static,
+                    Name = methodName,
+                    ReturnType = new CodeTypeReference(typeof(Cons))
+                };
 
-            CodeMemberMethod serializeMethod = new CodeMemberMethod {
-                Attributes = MemberAttributes.Public | MemberAttributes.Static,
-                Name = methodName,
-                ReturnType = new CodeTypeReference(typeof(Cons))
-            };
-            serializeMethod.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "obj"));
-            serializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeParam, "objCasted",
-                new CodeCastExpression(typeParam, new CodeArgumentReferenceExpression("obj"))));
-            serializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeof(Cons), "result",
-                new CodeObjectCreateExpression(typeof(Cons))));
-            serializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeof(Cons), "current",
-                new CodeVariableReferenceExpression("result")));
+                string obj = "obj";
+                string objCasted = "objCasted";
+                string current = "current";
+                string result = "result";
 
-            var serializeExpr =
-                new CodeMethodReferenceExpression(new CodeTypeReferenceExpression(nameof(OSerializer)),
-                    nameof(Serialize));
+                serializeMethod.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), obj));
+                serializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeParam, objCasted,
+                    new CodeCastExpression(typeParam, new CodeArgumentReferenceExpression(obj))));
+                serializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeof(Cons), result,
+                    new CodeObjectCreateExpression(typeof(Cons))));
+                serializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeof(Cons), current,
+                    new CodeVariableReferenceExpression(result)));
 
-            foreach (var mb in typeParam.GetMembers(BindingFlags.Instance | BindingFlags.Public)) {
-                if (mb is FieldInfo) {
-                    var f = (FieldInfo) mb;
+                var serializeExpr =
+                    new CodeMethodReferenceExpression(new CodeTypeReferenceExpression(nameof(OSerializer)),
+                        nameof(Serialize));
 
-                    if (f.IsLiteral)
-                        continue;
-                    SerializeMember(f.FieldType, f.Name, serializeMethod, serializeExpr);
+                foreach (var mb in typeParam.GetMembers(BindingFlags.Instance | BindingFlags.Public)) {
+                    if (mb is FieldInfo) {
+                        var f = (FieldInfo) mb;
+
+                        if (f.IsLiteral)
+                            continue;
+                        SerializeMember(f.FieldType, f.Name, serializeMethod, serializeExpr, objCasted, current);
+                    }
+                    else if (mb is PropertyInfo) {
+                        var p = (PropertyInfo) mb;
+                        SerializeMember(p.PropertyType, p.Name, serializeMethod, serializeExpr, objCasted, current);
+                    }
                 }
-                else if (mb is PropertyInfo) {
-                    var p = (PropertyInfo) mb;
-                    SerializeMember(p.PropertyType, p.Name, serializeMethod, serializeExpr);
-                }
+                CodeMethodReturnStatement returnStatement = new CodeMethodReturnStatement {
+                    Expression = new CodeVariableReferenceExpression(result)
+                };
+                serializeMethod.Statements.Add(returnStatement);
+                sampleClass.Members.Add(serializeMethod);
             }
 
-            CodeMethodReturnStatement returnStatement = new CodeMethodReturnStatement {
-                Expression = new CodeVariableReferenceExpression("result")
-            };
-            serializeMethod.Statements.Add(returnStatement);
-            targetClass.Members.Add(serializeMethod);
-
-            var type = CompileUnit(typeParam, targetUnit, "ser").CompiledAssembly.GetType($"{samples.Name}.{targetClass.Name}");
+            var type =
+                CompileUnit(typeParam, targetUnit, "ser")
+                    .CompiledAssembly.GetType($"{sampleNamespace.Name}.{sampleClass.Name}");
             var method = type.GetMethod(methodName);
             return obj => (Cons) method?.Invoke(null, new[] {obj});
         }
 
         private static void SerializeMember(Type memberType, string memberName, CodeMemberMethod serializeMethod,
-            CodeMethodReferenceExpression serializeExpr) {
+            CodeMethodReferenceExpression serializeExpr, string objCasted, string current) {
             CodeExpression memberExpr =
-                new CodeFieldReferenceExpression(new CodeArgumentReferenceExpression("objCasted"), memberName);
+                new CodeFieldReferenceExpression(new CodeArgumentReferenceExpression(objCasted), memberName);
             CodeExpression memberTypeExpr = new CodeTypeOfExpression(memberType);
             var serializeMemberExpr = new CodeMethodInvokeExpression(serializeExpr, new[] {memberExpr, memberTypeExpr});
 
@@ -125,7 +134,7 @@ namespace Ogam3.Serialization {
 
             if (BinFormater.IsPrimitive(memberType)) {
                 serializeMethod.Statements.Add(
-                    MAddConsAndAssign(new CodeVariableReferenceExpression("current"), toSymbolExpr, memberExpr));
+                    MAddConsAndAssign(new CodeVariableReferenceExpression(current), toSymbolExpr, memberExpr));
             }
             else {
                 serializeMethod.Statements.Add(
@@ -133,10 +142,10 @@ namespace Ogam3.Serialization {
                         new CodeBinaryOperatorExpression(memberExpr, CodeBinaryOperatorType.IdentityEquality,
                             new CodePrimitiveExpression(null)),
                         new[] {
-                            MAddConsAndAssign(new CodeVariableReferenceExpression("current"), toSymbolExpr,
+                            MAddConsAndAssign(new CodeVariableReferenceExpression(current), toSymbolExpr,
                                 new CodePrimitiveExpression(null))
                         }, new[] {
-                            MAddConsAndAssign(new CodeVariableReferenceExpression("current"), toSymbolExpr,
+                            MAddConsAndAssign(new CodeVariableReferenceExpression(current), toSymbolExpr,
                                 serializeMemberExpr)
                         }));
             }
@@ -161,7 +170,7 @@ namespace Ogam3.Serialization {
         public static object Deserialize(Cons pair, Type typeParam) {
             return pair == null
                 ? null
-                : Deserializers.GetOrAdd(typeParam, type => new Lazy<Func<Cons, object>>(() => GenerateDeserializer(type)))?
+                : Deserializers.GetOrAdd(typeParam, type => new Lazy<Func<Cons, object>>(() => GenerateDeserializer(type), LazyThreadSafetyMode.ExecutionAndPublication))?
                     .Value(pair);
         }
 
