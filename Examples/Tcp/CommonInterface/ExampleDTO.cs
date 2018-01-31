@@ -12,6 +12,6 @@ namespace CommonInterface {
         public int IntegerValue;
         public double DoubleValue;
         public MemoryStream StreamValue;
-        //public List<int> IntList;
+        public List<int> IntList;
     }
 }

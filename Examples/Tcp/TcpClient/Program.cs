@@ -14,7 +14,6 @@ using Ogam3.Network.Tcp;
 namespace TcpClient {
     class Program {
         static void Main(string[] args) {
-
             var cli = new OTcpClient("localhost", 1010);
 
             cli.RegisterImplementation(new ClientLogigImplementation());
@@ -37,15 +36,18 @@ namespace TcpClient {
             pc.NotImplemented();
 
             var dto = new ExampleDTO() {
-                DateTimeValue = DateTime.Now
-                , DoubleValue = 11.33
-                , IntegerValue = 1133
-                , StringValue = "String message"
-                //, IntList = new List<int>(){1,2,3,4,5,6,7}
-                , StreamValue = new MemoryStream(new byte[]{2, 4, 8, 16, 32, 64, 128})
+                DateTimeValue = DateTime.Now,
+                DoubleValue = 11.33,
+                IntegerValue = 1133,
+                StringValue = "String message",
+                IntList = new List<int>() {1, 2, 3, 4, 5, 6, 7},
+                StreamValue = new MemoryStream(new byte[] {2, 4, 8, 16, 32, 64, 128})
             };
 
             var echoDto = pc.TestSerializer(dto);
+
+            Console.WriteLine($"DTO {echoDto.DateTimeValue}");
+
 
             while (true) {
                 Console.Write("CLI > ");

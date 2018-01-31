@@ -1,18 +1,21 @@
 ﻿using System;
 using System.CodeDom;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Amib.Threading;
 using Ogam3.Utils;
+using Action = System.Action;
 
 namespace Ogam3.TxRx {
     public class Transfering : IDisposable {
         private Stream _sendStream;
         private Stream _receiveStream;
         private uint _quantSize;
-        private Dictionary<ulong, Action<byte[]>> _synchronizer;
+        private ConcurrentDictionary<ulong, Action<byte[]>> _synchronizer;
 
         private bool isTranferDead;
 
@@ -35,7 +38,7 @@ namespace Ogam3.TxRx {
             _sendStream = sendStream;
             _receiveStream = receiveStream;
             _quantSize = quantSize;
-            _synchronizer = new Dictionary<ulong, Action<byte[]>>();
+            _synchronizer = new ConcurrentDictionary<ulong, Action<byte[]>>();
 
             var pingRap = (ulong)0;
 
@@ -60,17 +63,18 @@ namespace Ogam3.TxRx {
 
                     Thread.Sleep(11000);
                 }
-            }){IsBackground = true}.Start();
+            }){IsBackground = true, Priority = ThreadPriority.AboveNormal}.Start();
         }
 
         public byte[] Send(byte[] data) {
-            if (isTranferDead) return new byte[0];
+            if (isTranferDead)
+                return new byte[0];
 
             var rap = TpLspHelper.NewUID();
             var sync = new Synchronizer(true);
             var result = new byte[0];
 
-            _synchronizer.Add(rap, (rslt) => {
+            _synchronizer.TryAdd(rap, (rslt) => {
                 result = rslt;
                 sync.Unlock();
             });
@@ -78,7 +82,8 @@ namespace Ogam3.TxRx {
             SendManager(data, rap);
 
             sync.Wait();
-            _synchronizer.Remove(rap);
+            Action<byte[]> res;
+            _synchronizer.TryRemove(rap, out res);
             return result;
         }
 
@@ -96,22 +101,42 @@ namespace Ogam3.TxRx {
             }
         }
 
-        public void StartReceiver(Func<byte[], byte[]> requestHandler) {
+        public void StartReceiver(System.Func<byte[], byte[]> requestHandler) {
             StartListener(_receiveStream, (rap, data) => {
                 Action<byte[]> receiveAct = null;
                 if (_synchronizer.TryGetValue(rap, out receiveAct)) {
-                    receiveAct(data);
+                    //receiveAct(data);
+
+                    //receiveAct.BeginInvoke(data, null, null);
+
+                    receiveResponcePool.QueueWorkItem(() => {
+                        receiveAct(data);
+                    });
                 }
                 else {
-                    requestHandler.BeginInvoke(data, ar => {
-                        var result = requestHandler.EndInvoke(ar);
-                        SendManager(result, rap);
-                    }, null);
+                    //requestHandler.BeginInvoke(data, ar => { // bad solution
+                    //    var result = requestHandler.EndInvoke(ar);
+                    //    SendManager(result, rap);
+                    //}, null);
+
+
+                    //SendManager(requestHandler(data), rap); // fast
+
+                    //new Thread(() => {
+                    //    SendManager(requestHandler(data), rap); // allow callbacks
+                    //}) { IsBackground = true }.Start();
+
+                    receiveRequestPool.QueueWorkItem(() => {
+                        SendManager(requestHandler(data), rap);
+                    });
                 }
             });
         }
 
-        Thread StartListener(Stream transferChannel, Action<ulong, byte[]> receiveDataSet) {
+        private SmartThreadPool receiveRequestPool = new SmartThreadPool() {MaxThreads = 10000};
+        private SmartThreadPool receiveResponcePool = new SmartThreadPool() {MaxThreads = 10000};
+
+        Thread StartListener(Stream transferChannel, System.Action<ulong, byte[]> receiveDataSet) {
             var listenThrd = new Thread(() => { // Listener thread
                 try { 
                     var pkgBuilder = new Dictionary<uint, DataBuilder>();
@@ -137,7 +162,8 @@ namespace Ogam3.TxRx {
 
                                     //Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
 
-                                    receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
+                                    //receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
+                                    receiveDataSet.Invoke(tpLspS.Rap, result);
                                 }
 
                             }
@@ -146,7 +172,8 @@ namespace Ogam3.TxRx {
                                 //var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
                                 //Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
 
-                                receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
+                                //receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
+                                receiveDataSet.Invoke(tpLspS.Rap, result);
                             }
                         }
                     }
@@ -155,7 +182,7 @@ namespace Ogam3.TxRx {
                     isTranferDead = true;
                     OnConnectionError(e);
                 }
-            }) {IsBackground = true};
+            }) {IsBackground = true, Priority = ThreadPriority.Normal};
 
             listenThrd.Start();
 
