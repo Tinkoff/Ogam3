@@ -447,7 +447,7 @@ namespace Ogam3.Serialization {
                             new CodeTypeReference[] {
                                 new CodeTypeReference(typeof(Cons))
                             }),
-                        MCdr(new CodeArgumentReferenceExpression("car")))));
+                        MCdr(new CodeVariableReferenceExpression("p")))));
                 codeStat.Add(new CodeGotoStatement("insideLoop"));
 
                 deserializeMethod.Statements.Add(
