@@ -21,13 +21,16 @@ namespace Ogam3.Serialization {
         #region Serialize
 
         public static Cons Serialize(object obj) {
-            return new Cons(new Symbol("quote"), new Cons (Serialize(obj, obj.GetType())));
+            return new Cons(new Symbol("quote"), new Cons(Serialize(obj, obj.GetType())));
         }
 
         public static Cons Serialize(object obj, Type typeParam) {
             return obj == null
                 ? new Cons()
-                : Serializers.GetOrAdd(typeParam, type => new Lazy<Func<object, Cons>>(() => GenerateSerializer(type), LazyThreadSafetyMode.ExecutionAndPublication))?
+                : Serializers.GetOrAdd(typeParam,
+                        type =>
+                            new Lazy<Func<object, Cons>>(() => GenerateSerializer(type),
+                                LazyThreadSafetyMode.ExecutionAndPublication))?
                     .Value(obj);
         }
 
@@ -55,7 +58,9 @@ namespace Ogam3.Serialization {
                 return (obj) => {
                     if (obj == null)
                         return new Cons();
-                    return BinFormater.IsPrimitive(internalType) ? new Cons(obj) : new Cons(Serialize(obj, internalType));
+                    return BinFormater.IsPrimitive(internalType)
+                        ? new Cons(obj)
+                        : new Cons(Serialize(obj, internalType));
                 };
             }
             return GeneratePropsAndFieldsSerializer(typeParam);
@@ -170,32 +175,11 @@ namespace Ogam3.Serialization {
         public static object Deserialize(Cons pair, Type typeParam) {
             return pair == null
                 ? null
-                : Deserializers.GetOrAdd(typeParam, type => new Lazy<Func<Cons, object>>(() => GenerateDeserializer(type), LazyThreadSafetyMode.ExecutionAndPublication))?
+                : Deserializers.GetOrAdd(typeParam,
+                        type =>
+                            new Lazy<Func<Cons, object>>(() => GenerateDeserializer(type),
+                                LazyThreadSafetyMode.ExecutionAndPublication))?
                     .Value(pair);
-        }
-
-        private static CodeExpression MInvoke(CodeExpression objectRef, string methodName, params CodeExpression[] args) {
-            return new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(objectRef, methodName), args);
-        }
-
-        private static CodeExpression MCar(CodeExpression objectRef) {
-            return MInvoke(objectRef, "Car");
-        }
-
-        private static CodeExpression MCdr(CodeExpression objectRef) {
-            return MInvoke(objectRef, "Cdr");
-        }
-
-        private static CodeExpression MConverter(Type memberType, CodeExpression arg) {
-            if (memberType == typeof(MemoryStream)) {
-                return arg;
-            }
-
-            return new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)), $"To{memberType.Name}", arg);
-        }
-
-        public static T MAsOperator<T>(object obj) {
-            return obj is T ? (T) obj : default(T);
         }
 
         private static Func<Cons, object> GenerateDeserializer(Type t) {
@@ -223,7 +207,14 @@ namespace Ogam3.Serialization {
                 var internalType = t.GetInterface("ICollection`1").GetGenericArguments()[0];
 
                 deserializeMethod.Statements.Add(new CodeLabeledStatement("insideLoop"));
-                deserializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeof(object), "p", MCar(new CodeArgumentReferenceExpression("pair"))));
+                deserializeMethod.Statements.Add(new CodeConditionStatement(
+                    new CodeBinaryOperatorExpression(new CodeVariableReferenceExpression("pair"),
+                        CodeBinaryOperatorType.IdentityEquality,
+                        new CodePrimitiveExpression(null)), new[] {
+                        new CodeGotoStatement("outOfLoop")
+                    }));
+                deserializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeof(object), "p",
+                    MCar(new CodeArgumentReferenceExpression("pair"))));
                 deserializeMethod.Statements.Add(new CodeConditionStatement(
                     new CodeBinaryOperatorExpression(new CodeVariableReferenceExpression("p"),
                         CodeBinaryOperatorType.IdentityEquality,
@@ -257,13 +248,7 @@ namespace Ogam3.Serialization {
                             new CodeExpression[] {
                                 new CodeVariableReferenceExpression("elem"),
                             }));
-                deserializeMethod.Statements.Add(new CodeConditionStatement(
-                    new CodeBinaryOperatorExpression(
-                        new CodeMethodInvokeExpression(new CodeArgumentReferenceExpression("pair"), "MoveNext"),
-                        CodeBinaryOperatorType.IdentityEquality,
-                        new CodePrimitiveExpression(null)), new[] {
-                        new CodeGotoStatement("outOfLoop")
-                    }));
+                deserializeMethod.Statements.Add(MConsNext(new CodeArgumentReferenceExpression("pair")));
                 deserializeMethod.Statements.Add(new CodeGotoStatement("insideLoop"));
                 deserializeMethod.Statements.Add(new CodeLabeledStatement("outOfLoop"));
             }
@@ -308,17 +293,17 @@ namespace Ogam3.Serialization {
                         new CodeCastExpression(internalType1, new CodeMethodInvokeExpression(
                             new CodeTypeReferenceExpression(typeof(OSerializer)),
                             "Deserialize", new CodeCastExpression(typeof(Cons),
-                                MCdr(new CodeCastExpression(typeof(Cons),MCar(new CodeArgumentReferenceExpression("pair"))))),
+                                MCdr(new CodeCastExpression(typeof(Cons),
+                                    MCar(new CodeArgumentReferenceExpression("pair"))))),
                             new CodeTypeOfExpression(internalType1)))));
-                deserializeMethod.Statements.Add(
-                    new CodeMethodInvokeExpression(new CodeArgumentReferenceExpression("pair"), "MoveNext"));
+                deserializeMethod.Statements.Add(MConsNext(new CodeArgumentReferenceExpression("pair")));
 
                 if (BinFormater.IsPrimitive(internalType2))
                     deserializeMethod.Statements.Add(new CodeAssignStatement(
                         new CodeVariableReferenceExpression("value"),
                         new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)),
                             $"To{internalType2.Name}",
-                              MCdr(
+                            MCdr(
                                 new CodeCastExpression(typeof(Cons),
                                     MCar(new CodeArgumentReferenceExpression("pair")))))));
                 else
@@ -327,10 +312,10 @@ namespace Ogam3.Serialization {
                         new CodeCastExpression(internalType2, new CodeMethodInvokeExpression(
                             new CodeTypeReferenceExpression(typeof(OSerializer)),
                             "Deserialize", new CodeCastExpression(typeof(Cons),
-                                MCdr(new CodeCastExpression(typeof(Cons),MCar(new CodeArgumentReferenceExpression("pair"))))),
+                                MCdr(new CodeCastExpression(typeof(Cons),
+                                    MCar(new CodeArgumentReferenceExpression("pair"))))),
                             new CodeTypeOfExpression(internalType2)))));
-                deserializeMethod.Statements.Add(
-                    new CodeMethodInvokeExpression(new CodeArgumentReferenceExpression("pair"), "MoveNext"));
+                deserializeMethod.Statements.Add(MConsNext(new CodeArgumentReferenceExpression("pair")));
                 deserializeMethod.Statements.Add(new CodeAssignStatement(
                     new CodeVariableReferenceExpression("result"),
                     new CodeObjectCreateExpression(t, new CodeVariableReferenceExpression("key"),
@@ -392,108 +377,98 @@ namespace Ogam3.Serialization {
             deserializeMethod.Statements.Add(returnStatement);
             targetClass.Members.Add(deserializeMethod);
 
-            var type = CompileUnit(t, targetUnit).CompiledAssembly.GetType($"{samples.Name}.{targetClass.Name}");
+            var type = CompileUnit(t, targetUnit)
+                .CompiledAssembly.GetType($"{samples.Name}.{targetClass.Name}");
             var method = type.GetMethod(methodName);
             return pair => method?.Invoke(null, new[] {pair});
         }
 
         private static void DeserializeMember(CodeMemberMethod deserializeMethod, Type memberType, string name) {
-            if (memberType.GetInterfaces().Any(ie => ie == typeof(ICollection)))
-                deserializeMethod.Statements.Add(new CodeConditionStatement(
-                    new CodeBinaryOperatorExpression(new CodeMethodInvokeExpression(MCar(new CodeVariableReferenceExpression("car")), "ToString"),
-                        CodeBinaryOperatorType.IdentityEquality,
-                        new CodePrimitiveExpression(name)), new CodeStatement[] {
+            var memberNameExpr = new CodeMethodInvokeExpression(MCar(new CodeVariableReferenceExpression("car")),
+                "ToString");
+            if (BinFormater.IsPrimitive(memberType)) {
+                deserializeMethod.Statements.Add(
+                    MIfEqualToMemberName(memberNameExpr, name, new CodeStatement[] {
+                        new CodeAssignStatement(
+                            new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"),
+                                name),
+                            MasOperatorExpression(memberType, MCdr(new CodeArgumentReferenceExpression("car")))),
+                        MConsNext(new CodeVariableReferenceExpression("p")),
+                        new CodeGotoStatement("insideLoop")
+                    }));
+            }
+            else
+                deserializeMethod.Statements.Add(
+                    MIfEqualToMemberName(memberNameExpr, name, new CodeStatement[] {
                         new CodeVariableDeclarationStatement(typeof(Cons), "prevalue",
                             new CodeCastExpression(typeof(Cons), MCdr(new CodeArgumentReferenceExpression("car")))),
                         new CodeConditionStatement(
                             new CodeBinaryOperatorExpression(
                                 new CodeVariableReferenceExpression("prevalue"),
-                                CodeBinaryOperatorType.IdentityEquality,
+                                CodeBinaryOperatorType.IdentityInequality,
                                 new CodePrimitiveExpression(null)), new CodeStatement[] {
-                                new CodeAssignStatement(new CodeVariableReferenceExpression("p"),
-                                    new CodeCastExpression(typeof(Cons), MCar(new CodeVariableReferenceExpression("p")))), new CodeGotoStatement("insideLoop")
+                                new CodeAssignStatement(
+                                    new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"),
+                                        name), new CodeCastExpression(memberType,
+                                        new CodeMethodInvokeExpression(
+                                            new CodeTypeReferenceExpression(typeof(OSerializer)),
+                                            "Deserialize",
+                                            new CodeCastExpression(typeof(Cons),
+                                                new CodeArgumentReferenceExpression("prevalue")),
+                                            new CodeTypeOfExpression(memberType))))
                             }),
-                        new CodeAssignStatement(
-                            new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"),
-                                $"{name}"), new CodeCastExpression(memberType,
-                                new CodeMethodInvokeExpression(
-                                    new CodeTypeReferenceExpression(typeof(OSerializer)),
-                                    "Deserialize",
-                                    new CodeCastExpression(typeof(Cons), MCar(new CodeArgumentReferenceExpression("prevalue"))),
-                                    new CodeTypeOfExpression(memberType)))),
-                        new CodeAssignStatement(new CodeVariableReferenceExpression("p"),
-                            new CodeCastExpression(typeof(Cons),
-                                MCdr(new CodeVariableReferenceExpression("p")))),
+                        MConsNext(new CodeVariableReferenceExpression("p")),
                         new CodeGotoStatement("insideLoop")
                     }));
-            else if (BinFormater.IsPrimitive(memberType)) {
-                var codeStat = new List<CodeStatement>();
-                codeStat.Add(new CodeAssignStatement(
-                    new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"), $"{name}"),
-                    new CodeMethodInvokeExpression(
-                        new CodeMethodReferenceExpression(
-                            new CodeTypeReferenceExpression(typeof(OSerializer)), 
-                            "MAsOperator",
-                            new CodeTypeReference[] {
-                                new CodeTypeReference(memberType)
-                            }),
-                        MCdr(new CodeArgumentReferenceExpression("car")))));
-                codeStat.Add(new CodeAssignStatement(
-                        new CodeVariableReferenceExpression("p"),
-                    new CodeMethodInvokeExpression(
-                        new CodeMethodReferenceExpression(
-                            new CodeTypeReferenceExpression(typeof(OSerializer)),
-                            "MAsOperator",
-                            new CodeTypeReference[] {
-                                new CodeTypeReference(typeof(Cons))
-                            }),
-                        MCdr(new CodeVariableReferenceExpression("p")))));
-                codeStat.Add(new CodeGotoStatement("insideLoop"));
+        }
 
-                deserializeMethod.Statements.Add(
-                    new CodeConditionStatement(
-                        new CodeBinaryOperatorExpression(
-                            new CodeMethodInvokeExpression(
-                                MCar(new CodeVariableReferenceExpression("car")),
-                                "ToString"), 
-                            CodeBinaryOperatorType.IdentityEquality, 
-                            new CodePrimitiveExpression(name)),
-                        codeStat.ToArray()));
+        private static CodeAssignStatement MConsNext(CodeExpression var) {
+            return new CodeAssignStatement(
+                var, MasOperatorExpression(typeof(Cons), MCdr(var)));
+        }
+
+        private static CodeConditionStatement MIfEqualToMemberName(CodeExpression expr, string memberName,
+            CodeStatement[] ifTrue) {
+            return new CodeConditionStatement(
+                new CodeBinaryOperatorExpression(expr,
+                    CodeBinaryOperatorType.IdentityEquality,
+                    new CodePrimitiveExpression(memberName)), ifTrue);
+        }
+
+        private static CodeExpression MInvoke(CodeExpression objectRef, string methodName, params CodeExpression[] args) {
+            return new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(objectRef, methodName), args);
+        }
+
+        private static CodeExpression MCar(CodeExpression objectRef) {
+            return MInvoke(objectRef, "Car");
+        }
+
+        private static CodeExpression MCdr(CodeExpression objectRef) {
+            return MInvoke(objectRef, "Cdr");
+        }
+
+        private static CodeExpression MConverter(Type memberType, CodeExpression arg) {
+            if (memberType == typeof(MemoryStream)) {
+                return arg;
             }
-            else
-                deserializeMethod.Statements.Add(new CodeConditionStatement(
-                    new CodeBinaryOperatorExpression(new CodeMethodInvokeExpression(
-                            MCar(new CodeVariableReferenceExpression("car")),
-                            "ToString"),
-                        CodeBinaryOperatorType.IdentityEquality,
-                        new CodePrimitiveExpression(name)), new CodeStatement[] {
-                        new CodeVariableDeclarationStatement(typeof(Cons), "prevalue",
-                            new CodeCastExpression(typeof(Cons),
-                                MCdr(new CodeArgumentReferenceExpression("car")))),
-                        new CodeConditionStatement(
-                            new CodeBinaryOperatorExpression(
-                                new CodeVariableReferenceExpression("prevalue"),
-                                CodeBinaryOperatorType.IdentityEquality,
-                                new CodePrimitiveExpression(null)), new CodeStatement[] {
-                                new CodeAssignStatement(new CodeVariableReferenceExpression("p"),
-                                    new CodeCastExpression(typeof(Cons),
-                                        MCdr(new CodeVariableReferenceExpression("p")))),
-                                new CodeGotoStatement("insideLoop")
-                            }),
-                        new CodeAssignStatement(
-                            new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"),
-                                $"{name}"), new CodeCastExpression(memberType,
-                                new CodeMethodInvokeExpression(
-                                    new CodeTypeReferenceExpression(typeof(OSerializer)),
-                                    "Deserialize",
-                                    new CodeCastExpression(typeof(Cons),
-                                        new CodeArgumentReferenceExpression("prevalue")),
-                                    new CodeTypeOfExpression(memberType)))),
-                        new CodeAssignStatement(new CodeVariableReferenceExpression("p"),
-                            new CodeCastExpression(typeof(Cons),
-                                MCdr(new CodeVariableReferenceExpression("p")))),
-                        new CodeGotoStatement("insideLoop")
-                    }));
+
+            return new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)),
+                $"To{memberType.Name}", arg);
+        }
+
+        public static T MAsOperator<T>(object obj) {
+            return obj is T ? (T) obj : default(T);
+        }
+
+        private static CodeExpression MasOperatorExpression(Type type, CodeExpression expr) {
+            return new CodeMethodInvokeExpression(
+                new CodeMethodReferenceExpression(
+                    new CodeTypeReferenceExpression(typeof(OSerializer)),
+                    "MAsOperator",
+                    new CodeTypeReference[] {
+                        new CodeTypeReference(type)
+                    }),
+                expr);
         }
 
         #endregion
@@ -520,6 +495,7 @@ namespace Ogam3.Serialization {
             }
             return result;
         }
+
         private static CodeTypeDeclaration GetCodeTypeDeclaration() {
             return new CodeTypeDeclaration(GeneratedClassName) {
                 IsClass = true,
@@ -527,6 +503,7 @@ namespace Ogam3.Serialization {
                 TypeAttributes = TypeAttributes.Public | TypeAttributes.Sealed
             };
         }
+
         private static ICollection<string> GetTypeNamespaces(Type t) {
             var res = new List<string> {t.Namespace};
 
@@ -550,6 +527,7 @@ namespace Ogam3.Serialization {
             }
             return res.Distinct().ToList();
         }
+
         private static CompilerResults CompileUnit(Type t, CodeCompileUnit targetUnit, string sourceFileName = null) {
             var provider = CodeDomProvider.CreateProvider("CSharp");
 
