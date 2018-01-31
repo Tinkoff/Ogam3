@@ -185,27 +185,8 @@ namespace Ogam3.Serialization {
             return new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Convert)), $"To{memberType.Name}", arg);
         }
 
-        private static int _varCount;
-
-        private static CodeExpression MSafeCasting(Type targetType, CodeExpression exp, List<CodeStatement> statement) {
-
-            CodeExpression typeDefaultValue = null;
-            if (targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null) { // if value type create constructor for default value
-                typeDefaultValue = new CodeObjectCreateExpression(targetType);
-            }
-            else { // else should be null
-                typeDefaultValue = new CodePrimitiveExpression(null);
-            }
-
-            var testNullValue = new CodeBinaryOperatorExpression(exp, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression(null));
-
-            var varName = $"tmpVar_{_varCount++}";
-            statement.Add(new CodeVariableDeclarationStatement(targetType, varName));
-            var varRef = new CodeVariableReferenceExpression(varName);
-            statement.Add(new CodeConditionStatement(testNullValue, new[] {new CodeAssignStatement(varRef, typeDefaultValue)}, new[] {new CodeAssignStatement(varRef, new CodeCastExpression(targetType, exp))}));
-            //var conditionalStatement = new CodeConditionStatement(testNullValue, new[] {new CodeMethodReturnStatement(typeDefaultValue)}, new[] {new CodeMethodReturnStatement(new CodeCastExpression(targetType, exp))});
-
-            return varRef;
+        public static T MAsOperator<T>(object obj) {
+            return obj is T ? (T) obj : default(T);
         }
 
         private static Func<Cons, object> GenerateDeserializer(Type t) {
@@ -437,12 +418,27 @@ namespace Ogam3.Serialization {
                         new CodeGotoStatement("insideLoop")
                     }));
             else if (BinFormater.IsPrimitive(memberType)) {
-
                 var codeStat = new List<CodeStatement>();
-                codeStat.Add(new CodeAssignStatement(new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"), $"{name}"), MSafeCasting(memberType,MConverter(memberType, MCdr(new CodeArgumentReferenceExpression("car"))), codeStat)));
-
-                //codeStat.Add(new CodeAssignStatement(new CodeVariableReferenceExpression("p"), new CodeCastExpression(typeof(Cons), MCdr(new CodeVariableReferenceExpression("p")))));
-                codeStat.Add(new CodeAssignStatement(new CodeVariableReferenceExpression("p"), MSafeCasting(typeof(Cons), MCdr(new CodeVariableReferenceExpression("p")), codeStat)));
+                codeStat.Add(new CodeAssignStatement(
+                    new CodeFieldReferenceExpression(new CodeVariableReferenceExpression("result"), $"{name}"),
+                    new CodeMethodInvokeExpression(
+                        new CodeMethodReferenceExpression(
+                            new CodeTypeReferenceExpression(typeof(OSerializer)), 
+                            "MAsOperator",
+                            new CodeTypeReference[] {
+                                new CodeTypeReference(memberType)
+                            }),
+                        MCdr(new CodeArgumentReferenceExpression("car")))));
+                codeStat.Add(new CodeAssignStatement(
+                        new CodeVariableReferenceExpression("p"),
+                    new CodeMethodInvokeExpression(
+                        new CodeMethodReferenceExpression(
+                            new CodeTypeReferenceExpression(typeof(OSerializer)),
+                            "MAsOperator",
+                            new CodeTypeReference[] {
+                                new CodeTypeReference(typeof(Cons))
+                            }),
+                        MCdr(new CodeArgumentReferenceExpression("car")))));
                 codeStat.Add(new CodeGotoStatement("insideLoop"));
 
                 deserializeMethod.Statements.Add(
