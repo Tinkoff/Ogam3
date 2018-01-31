@@ -94,14 +94,17 @@ namespace Ogam3.Network.Tcp {
             SpecialMessageEvt?.Invoke(sm, call);
         }
 
-        public object Call(object seq) {
+        public object Call(object seq, bool evalResp = false) {
             if (_sendSync.Wait(5000)) {
                 var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray())));
-                if (resp.Car() is SpecialMessage) {
-                    OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);
-                    return null;
-                } else if (resp is Cons) {
-                    return Evaluator.EvlSeq(resp);
+                if (evalResp) {
+                    if (resp.Car() is SpecialMessage) {
+                        OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);
+                        return null;
+                    }
+                    else if (resp.Car() is Cons) {
+                        return Evaluator.EvlSeq(resp);
+                    }
                 }
 
                 return resp.Car();

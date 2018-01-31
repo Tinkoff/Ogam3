@@ -253,7 +253,7 @@ namespace Ogam3.Lsp {
 
             var consLst = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Cons)), nameof(Cons.List), listBuilderParams.ToArray());
 
-            var invoke = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(tcpClientRef, nameof(ISomeClient.Call)), consLst);
+            var invoke = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(tcpClientRef, nameof(ISomeClient.Call)), consLst, new CodePrimitiveExpression(true));
 
             // IS VOID METHOD
             if (returnType == typeof(void)) {

@@ -116,7 +116,7 @@ namespace Ogam3.Serialization {
             }
 
             var type =
-                CompileUnit(typeParam, targetUnit, "ser")
+                CompileUnit(typeParam, targetUnit)
                     .CompiledAssembly.GetType($"{sampleNamespace.Name}.{sampleClass.Name}");
             var method = type.GetMethod(methodName);
             return obj => (Cons) method?.Invoke(null, new[] {obj});
@@ -392,7 +392,7 @@ namespace Ogam3.Serialization {
             deserializeMethod.Statements.Add(returnStatement);
             targetClass.Members.Add(deserializeMethod);
 
-            var type = CompileUnit(t, targetUnit, "deser").CompiledAssembly.GetType($"{samples.Name}.{targetClass.Name}");
+            var type = CompileUnit(t, targetUnit).CompiledAssembly.GetType($"{samples.Name}.{targetClass.Name}");
             var method = type.GetMethod(methodName);
             return pair => method?.Invoke(null, new[] {pair});
         }

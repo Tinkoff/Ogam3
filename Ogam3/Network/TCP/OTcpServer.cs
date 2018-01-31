@@ -87,7 +87,7 @@ namespace Ogam3.Network.Tcp {
 
             server.StartReceiver(data => {
                 SetContextObj(ContextTcpClientId, client); // TODO single set
-                SetContextObj(ReClientId, new ReClient(server)); // TODO single set
+                SetContextObj(ReClientId, new ReClient(server, Evaluator)); // TODO single set
 
                 return DataHandler(Evaluator, data);
             });
@@ -95,8 +95,9 @@ namespace Ogam3.Network.Tcp {
 
         public class ReClient : ISomeClient {
             private Transfering _transfering;
+            private Evaluator _evaluator;
 
-            public ReClient(Transfering transfering) {
+            public ReClient(Transfering transfering, Evaluator _evaluator) {
                 _transfering = transfering;
             }
 
@@ -104,8 +105,14 @@ namespace Ogam3.Network.Tcp {
                 return (T)Definer.CreateTcpCaller(typeof(T), this);
             }
 
-            public object Call(object seq) {
-                return BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
+            public object Call(object seq, bool evalResp  = false) {
+                //return BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
+                var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray())));
+                if (evalResp && resp.Car() is Cons) {
+                    return _evaluator.EvlSeq(resp);
+                }
+
+                return resp?.Car();
             }
         }
     }
