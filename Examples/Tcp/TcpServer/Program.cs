@@ -17,6 +17,10 @@ using Ogam3.Network.Tcp;
 namespace TcpServer {
     class Program {
         static void Main(string[] args) {
+            Type t = typeof(string);
+
+            object t1 = Activator.CreateInstance(t);
+
             var srv = new OTcpServer(1010);
 
             srv.RegisterImplementation(new ServerLogigImplementation());
