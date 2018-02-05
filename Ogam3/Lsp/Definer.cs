@@ -20,7 +20,8 @@ namespace Ogam3.Lsp {
             var type = instanceOfImplementation.GetType();
             foreach (var interfaceType in type.GetInterfaces()
                 .Where(t => t.GetCustomAttributes(typeof(EnviromentAttribute), false).Any())) {
-                var envAtt = (EnviromentAttribute) interfaceType.GetCustomAttribute(typeof(EnviromentAttribute));
+                //var envAtt = (EnviromentAttribute) interfaceType.GetCustomAttribute(typeof(EnviromentAttribute));
+                var envAtt = (EnviromentAttribute) interfaceType.GetCustomAttributes(typeof(EnviromentAttribute), true).FirstOrDefault();
                 foreach (var interfaceMethodInfo in interfaceType.GetMethods(methodFlags)) {
                     var implMethod = type.GetMethod(interfaceMethodInfo.Name, methodFlags);
 
@@ -29,7 +30,9 @@ namespace Ogam3.Lsp {
                     var funcArgs = implMethod.GetParameters().Select(p => p.ParameterType)
                         .Concat(new[] {implMethod.ReturnType}).ToArray();
                     var delegateType = Expression.GetDelegateType(funcArgs);
-                    var callableDelegate = implMethod.CreateDelegate(delegateType, instanceOfImplementation);
+                    //var callableDelegate = implMethod.CreateDelegate(delegateType, instanceOfImplementation);
+                    var callableDelegate = Delegate.CreateDelegate(delegateType, implMethod);
+
 
                     var shell = new Func<Params, object>((par) =>  { // TODO tmp solution reaplace atogenerated code
                         var finalArgLst = new List<object>();
@@ -162,7 +165,8 @@ namespace Ogam3.Lsp {
             const BindingFlags methodFlags =
                 BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
 
-            var envAtt = (EnviromentAttribute) serverInterface.GetCustomAttribute(typeof(EnviromentAttribute));
+            //var envAtt = (EnviromentAttribute) serverInterface.GetCustomAttribute(typeof(EnviromentAttribute));
+            var envAtt = (EnviromentAttribute) serverInterface.GetCustomAttributes(typeof(EnviromentAttribute), true).FirstOrDefault();
 
             foreach (var interfaceMethodInfo in serverInterface.GetMethods(methodFlags)) {
                 var funcArgs = interfaceMethodInfo.GetParameters().ToArray();
