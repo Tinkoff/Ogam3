@@ -48,14 +48,14 @@ namespace Ogam3.Network.Tcp {
         private TcpClient ConnectTcp() {
             while (true) {
                 try {
-                    ClientTcp?.Dispose();
+                    ClientTcp?.Close();
                     ClientTcp = new TcpClient();
                     ClientTcp.Connect(Host, Port);
 
                     break; // connection success
                 }
                 catch (Exception e) {
-                    ClientTcp?.Dispose();
+                    ClientTcp?.Close();
                     Thread.Sleep(1000); // sleep reconnection
                 }
             }

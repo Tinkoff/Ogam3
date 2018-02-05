@@ -40,8 +40,8 @@ namespace TcpClient {
                 DoubleValue = 11.33,
                 IntegerValue = 1133,
                 StringValue = "String message",
-                IntList = new List<int>() {1, 2, 3, 4, 5, 6, 7},
-                StreamValue = new MemoryStream(new byte[] {2, 4, 8, 16, 32, 64, 128})
+                IntList = new int[1000000].ToList(),
+                StreamValue = new MemoryStream(new byte[500000000])
             };
 
             var echoDto = pc.TestSerializer(dto);

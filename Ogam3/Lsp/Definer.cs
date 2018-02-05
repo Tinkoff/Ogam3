@@ -51,7 +51,7 @@ namespace Ogam3.Lsp {
                             return result;
                         }
 
-                        return OSerializer.Serialize(callableDelegate.DynamicInvoke(finalArgLst.ToArray()));
+                        return OSerializer.Serialize(result);
                     });
 
                     Func<string, bool> isEmpty = string.IsNullOrWhiteSpace;

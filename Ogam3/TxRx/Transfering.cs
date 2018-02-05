@@ -87,11 +87,14 @@ namespace Ogam3.TxRx {
             return result;
         }
 
+        static object _sendLocker = new object();
         private void SendManager(byte[] data, ulong rap) {
             try { 
                 using (var sync = Stream.Synchronized(_sendStream)) {
                     foreach (var quant in TpLspHelper.Quantize(data, _quantSize, rap)) {
-                        sync.Write(quant, 0, quant.Length);
+                        lock (_sendLocker) {
+                            sync.Write(quant, 0, quant.Length);
+                        }
                     }
                 }
                 OnTransferSuccess();

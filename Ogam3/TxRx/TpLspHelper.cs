@@ -139,10 +139,13 @@ namespace Ogam3.TxRx {
             }
         }
 
-
+        static object readPkgLocker = new object();
         public static IEnumerable<TpLspS> SequenceReader(Stream stream) {
             while (true) {
-                var pkg = ReadNextPakg(stream);
+                TpLspS? pkg;
+                lock (readPkgLocker) {
+                    pkg = ReadNextPakg(stream);
+                }
 
                 if (pkg == null) break;
 
