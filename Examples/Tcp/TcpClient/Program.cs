@@ -33,15 +33,15 @@ namespace TcpClient {
 
             pc.WriteMessage("Hello server!");
 
-            pc.NotImplemented();
+            //pc.NotImplemented();
 
             var dto = new ExampleDTO() {
                 DateTimeValue = DateTime.Now,
                 DoubleValue = 11.33,
                 IntegerValue = 1133,
                 StringValue = "String message",
-                IntList = new int[1000000].ToList(),
-                StreamValue = new MemoryStream(new byte[500000000])
+                IntList = new int[100].ToList(),
+                StreamValue = new MemoryStream(new byte[5000])
             };
 
             var echoDto = pc.TestSerializer(dto);
