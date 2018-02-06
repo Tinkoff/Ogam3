@@ -38,7 +38,7 @@ namespace Ogam3.Lsp {
                         var finalArgLst = new List<object>();
 
                         for (var i = 0; i < par.Count; i++) {
-                            if (BinFormater.IsPrimitive(par[i].GetType())) {
+                            if (BinFormater.IsPrimitive(funcArgs[i])) {
                                 finalArgLst.Add(par[i]);
                             }
                             else {
