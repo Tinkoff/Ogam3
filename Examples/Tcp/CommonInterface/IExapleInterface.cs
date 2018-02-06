@@ -1,4 +1,5 @@
 ﻿using Ogam3.Lsp;
+using System.Collections.Generic;
 
 namespace CommonInterface {
     [Enviroment ("server-side")]
@@ -7,10 +8,9 @@ namespace CommonInterface {
         int IntSummOfPower(int a, int b);
         double DoubleSumm(double a, double b);
         void WriteMessage(string text);
-
         void NotImplemented();
-
         ExampleDTO TestSerializer(ExampleDTO dto);
+        List<LoginDTO> GetLogins();
     }
 
     [Enviroment ("client-side")]

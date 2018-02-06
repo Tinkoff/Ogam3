@@ -58,5 +58,12 @@ namespace TcpServer {
         public ExampleDTO TestSerializer(ExampleDTO dto) {
             return dto;
         }
+
+        public List<LoginDTO> GetLogins()
+        {
+            var json = File.ReadAllText(@"Data\wrep-logins.json");
+            var dtos = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LoginDTO>>(json);
+            return dtos;
+        }
     }
 }

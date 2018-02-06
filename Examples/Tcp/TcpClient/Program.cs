@@ -49,6 +49,8 @@ namespace TcpClient {
             Console.WriteLine($"DTO {echoDto.DateTimeValue}");
 
 
+            var logins = pc.GetLogins();
+
             while (true) {
                 Console.Write("CLI > ");
                 var seq = Reader.Read(Console.ReadLine());
