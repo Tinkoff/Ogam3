@@ -11,7 +11,7 @@ namespace CommonInterface
         public string AccountNumber { get; set; }
         public bool IsContractSigned { get; set; }
         public int ContractType { get; set; }
-        public DateTime? DismissalDate { get; set; }
+        //public DateTime? DismissalDate { get; set; }
         public DateTime EmploymentDate { get; set; }
         public string Id { get; set; }
         public bool IsDeleted { get; set; }

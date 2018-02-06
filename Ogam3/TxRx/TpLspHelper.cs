@@ -4,11 +4,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using LZ4;
 
 namespace Ogam3.TxRx {
     class TpLspHelper {
-
         private static byte[] Coding(byte[] data) {
             //return Escape(Compress(data));
             return Compress(data);
@@ -30,6 +30,7 @@ namespace Ogam3.TxRx {
                 }
             }
         }
+
         public static IEnumerable<byte[]> Quantize(byte[] data, uint quantSize, ulong rap) {
             return MakeQuants(data, quantSize, rap);
         }
@@ -37,11 +38,12 @@ namespace Ogam3.TxRx {
         public static ulong NewUID() {
             return BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0);
         }
+
         private static IEnumerable<byte[]> MakeQuants(byte[] data, uint quantSize, ulong rap) {
             var wholeQuantCount = (uint) data.Length / quantSize;
             var tailByteCount = (uint) data.Length % quantSize;
             var totalQuantCount = wholeQuantCount + (uint) (tailByteCount > 0 ? 1 : 0);
-            var quantId = (uint)(DateTime.Now.Ticks - DateTime.Today.Ticks);
+            var quantId = (uint) (DateTime.Now.Ticks - DateTime.Today.Ticks);
 
             for (uint i = 0; i < wholeQuantCount; i++) {
                 yield return BuildPackageX(data, rap, i * quantSize, quantSize, quantId);
@@ -55,6 +57,7 @@ namespace Ogam3.TxRx {
                 yield return BuildPackageX(data, rap, 0, 0, quantId);
             }
         }
+
         private static byte[] CutDataQuant(byte[] data, uint start, uint length) {
             if (start == 0 && data.Length == length) return data; // speedup
 
@@ -64,8 +67,9 @@ namespace Ogam3.TxRx {
         }
 
         private static byte CalcCheckSumm(IEnumerable<byte> seq) {
-            return seq.Aggregate((acc, itm) => (byte)(acc ^ itm));
+            return seq.Aggregate((acc, itm) => (byte) (acc ^ itm));
         }
+
         private static byte[] BuildPackageX(byte[] data, ulong rap, uint shift, uint quantSize, uint quantId) {
             var pkg = new List<byte>();
             pkg.Add(TpLspS.BEGIN);
@@ -120,7 +124,8 @@ namespace Ogam3.TxRx {
 
         static byte[] Compress(byte[] data) {
             using (var compressedStream = new MemoryStream()) {
-                using (var zipStream = new LZ4Stream(compressedStream, CompressionMode.Compress)) { // GZipStream DeflateStream
+                using (var zipStream = new LZ4Stream(compressedStream, CompressionMode.Compress)) {
+// GZipStream DeflateStream
                     zipStream.Write(data, 0, data.Length);
                     zipStream.Close();
                     return compressedStream.ToArray();
@@ -197,16 +202,24 @@ namespace Ogam3.TxRx {
                 }
                 else if (bt == TpLspS.DATA) {
                     var arr = new byte[sizeof(uint)];
+
+
                     var realSize = stream.Read(arr, 0, arr.Length);
 
                     if (realSize != arr.Length) return null;
 
                     pkg.QuantData = new byte[BitConverter.ToUInt32(arr, 0)];
 
-                    if (pkg.QuantData.Length > 0) {
-                        realSize = stream.Read(pkg.QuantData, 0, pkg.QuantData.Length);
 
-                        if (realSize != pkg.QuantData.Length) return null;
+                    if (pkg.QuantData.Length > 0) {
+                        var dataPointer = 0;
+                        while (dataPointer < pkg.QuantData.Length) {
+                            realSize = stream.Read(pkg.QuantData, dataPointer, pkg.QuantData.Length - dataPointer);
+
+                            if (realSize <= 0) return null;
+
+                            dataPointer += realSize;
+                        }
 
                         pkg.QuantData = unCoding(pkg.QuantData);
                     }

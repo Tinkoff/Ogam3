@@ -63,7 +63,7 @@ namespace Ogam3.TxRx {
 
                     Thread.Sleep(11000);
                 }
-            }){IsBackground = true, Priority = ThreadPriority.AboveNormal}.Start();
+            }) { IsBackground = true, Priority = ThreadPriority.AboveNormal }.Start();
         }
 
         public byte[] Send(byte[] data) {
@@ -88,8 +88,9 @@ namespace Ogam3.TxRx {
         }
 
         static object _sendLocker = new object();
+
         private void SendManager(byte[] data, ulong rap) {
-            try { 
+            try {
                 using (var sync = Stream.Synchronized(_sendStream)) {
                     foreach (var quant in TpLspHelper.Quantize(data, _quantSize, rap)) {
                         lock (_sendLocker) {
