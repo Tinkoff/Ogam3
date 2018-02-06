@@ -31,7 +31,7 @@ namespace Ogam3.Lsp {
                         .Concat(new[] {implMethod.ReturnType}).ToArray();
                     var delegateType = Expression.GetDelegateType(funcArgs);
                     //var callableDelegate = implMethod.CreateDelegate(delegateType, instanceOfImplementation);
-                    var callableDelegate = Delegate.CreateDelegate(delegateType, implMethod);
+                    var callableDelegate = Delegate.CreateDelegate(delegateType, instanceOfImplementation, implMethod);
 
 
                     var shell = new Func<Params, object>((par) =>  { // TODO tmp solution reaplace atogenerated code
