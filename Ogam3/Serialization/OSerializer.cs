@@ -249,7 +249,7 @@ namespace Ogam3.Serialization {
                     MAsOperatorExpression(t, new CodeVariableReferenceExpression("p"))));
             }
             else if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>)) {
-                var internalType = t.GetInterface("ICollection`1").GetGenericArguments()[0];
+                var internalType = t.GetGenericArguments()[0];
                 if (BinFormater.IsPrimitive(internalType))
                     deserializeMethod.Statements.Add(new CodeAssignStatement(
                         new CodeVariableReferenceExpression("result"),
@@ -447,6 +447,8 @@ namespace Ogam3.Serialization {
         }
 
         public static T MAsOperator<T>(object obj) {
+            if (typeof(T).IsEnum)
+                return (T) obj;
             return obj is T ? (T) obj : default(T);
         }
 
