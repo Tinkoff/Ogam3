@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Remoting.Activation;
 using System.Runtime.Remoting.Contexts;
+using System.Text;
 using System.Threading;
 using Ogam3.Lsp;
 using Ogam3.TxRx;
@@ -13,7 +14,7 @@ namespace Ogam3.Network.Tcp {
         private readonly TcpListener _listener;
         private Thread listerThread;
         public uint BufferSize = 1048576;
-        private Evaluator Evaluator;
+        public Evaluator Evaluator;
 
         public OTcpServer(int port, Evaluator evaluator = null) {
             if (evaluator == null) {
@@ -64,7 +65,14 @@ namespace Ogam3.Network.Tcp {
             var receive = BinFormater.Read(new MemoryStream(data));
 
             try {
+                var transactLog = new StringBuilder();
+                transactLog.AppendLine($">> {receive}");
+
                 var res = evl.EvlSeq(receive);
+
+                transactLog.AppendLine($">> {res}");
+                Console.WriteLine(transactLog.ToString().Trim());
+
                 if (res != null) {
                     return BinFormater.Write(res).ToArray();
                 } else {
@@ -108,6 +116,7 @@ namespace Ogam3.Network.Tcp {
             public object Call(object seq, bool evalResp  = false) {
                 //return BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
                 var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray())));
+
                 if (evalResp && resp.Car() is Cons) {
                     return _evaluator.EvlSeq(resp);
                 }
