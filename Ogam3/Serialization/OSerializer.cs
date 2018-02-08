@@ -200,8 +200,13 @@ namespace Ogam3.Serialization {
             };
             deserializeMethod.Parameters.Add(new CodeParameterDeclarationExpression(typeof(Cons), "pair"));
 
-            deserializeMethod.Statements.Add(new CodeVariableDeclarationStatement(t, "result",
-                new CodeObjectCreateExpression(t)));
+            if (t.IsArray)
+                deserializeMethod.Statements.Add(new CodeVariableDeclarationStatement(typeof(List<>).MakeGenericType(t.GetElementType()), "result",
+                    new CodeObjectCreateExpression(typeof(List<>).MakeGenericType(t.GetElementType()))));
+            else
+                deserializeMethod.Statements.Add(new CodeVariableDeclarationStatement(t, "result",
+                    new CodeObjectCreateExpression(t)));
+
 
             if (t.GetInterfaces().Any(ie => ie == typeof(ICollection))) {
                 var internalType = t.GetInterface("ICollection`1").GetGenericArguments()[0];
@@ -345,9 +350,12 @@ namespace Ogam3.Serialization {
                 deserializeMethod.Statements.Add(new CodeLabeledStatement("outOfLoop"));
             }
 
-            CodeMethodReturnStatement returnStatement = new CodeMethodReturnStatement {
-                Expression = new CodeVariableReferenceExpression("result")
-            };
+            CodeMethodReturnStatement returnStatement = new CodeMethodReturnStatement();
+            if (t.IsArray)
+                returnStatement.Expression =
+                    new CodeMethodInvokeExpression(new CodeVariableReferenceExpression("result"), "ToArray");
+            else
+                returnStatement.Expression = new CodeVariableReferenceExpression("result");
 
             deserializeMethod.Statements.Add(returnStatement);
             targetClass.Members.Add(deserializeMethod);
