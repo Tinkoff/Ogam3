@@ -79,8 +79,14 @@ namespace Ogam3.Network.Tcp {
                     return new byte[0];
                 }
             } catch (Exception e) {
-                Console.WriteLine(e.Message);
-                return BinFormater.Write(new SpecialMessage(e)).ToArray();
+                var ex = e;
+                var sb = new StringBuilder();
+                while (ex != null) {
+                    sb.AppendLine(ex.Message);
+                    ex = ex.InnerException;
+                }
+                Console.WriteLine(sb.ToString());
+                return BinFormater.Write(new SpecialMessage(sb.ToString())).ToArray();
             }
         }
 
