@@ -66,7 +66,7 @@ namespace Ogam3.Network.Tcp {
 
             try {
                 var transactLog = new StringBuilder();
-                transactLog.AppendLine($">> {receive}");
+                transactLog.AppendLine($"<< {receive}");
 
                 var res = evl.EvlSeq(receive);
 
@@ -119,13 +119,9 @@ namespace Ogam3.Network.Tcp {
                 return (T)Definer.CreateTcpCaller(typeof(T), this);
             }
 
-            public object Call(object seq, bool evalResp  = false) {
+            public object Call(object seq) {
                 //return BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
                 var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray())));
-
-                if (evalResp && resp.Car() is Cons) {
-                    return _evaluator.EvlSeq(resp);
-                }
 
                 return resp?.Car();
             }

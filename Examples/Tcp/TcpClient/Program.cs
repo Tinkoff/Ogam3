@@ -54,7 +54,7 @@ namespace TcpClient {
             while (true) {
                 Console.Write("CLI > ");
                 var seq = Reader.Read(Console.ReadLine());
-                var result = cli.Call(seq.Car(), false);
+                var result = cli.Call(seq.Car());
                 Console.WriteLine($"RES > {result ?? "null"}");
             }
         }

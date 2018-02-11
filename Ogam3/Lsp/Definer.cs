@@ -54,7 +54,7 @@ namespace Ogam3.Lsp {
                             return result;
                         }
 
-                        return OSerializer.Serialize(result);
+                        return OSerializer.SerializeOnly(result);
                     });
 
                     Func<string, bool> isEmpty = string.IsNullOrWhiteSpace;
@@ -250,14 +250,14 @@ namespace Ogam3.Lsp {
                         new CodeMethodInvokeExpression(
                             new CodeMethodReferenceExpression(
                                 new CodeTypeReferenceExpression(typeof(OSerializer))
-                                , nameof(OSerializer.Serialize))
+                                , nameof(OSerializer.SerializeWithQuote))
                             , new CodeArgumentReferenceExpression(arg.Name)));
                 }
             }
 
             var consLst = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Cons)), nameof(Cons.List), listBuilderParams.ToArray());
 
-            var invoke = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(tcpClientRef, nameof(ISomeClient.Call)), consLst, new CodePrimitiveExpression(true));
+            var invoke = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(tcpClientRef, nameof(ISomeClient.Call)), consLst);
 
             // IS VOID METHOD
             if (returnType == typeof(void)) {

@@ -60,7 +60,7 @@ namespace Ogam3.Lsp {
             Define("+", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc + p)));
             Define("-", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc - p)));
             Define("*", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc * p)));
-            Define("//", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc / p)));
+            Define("/", new Func<Params, dynamic>((par) => par.Aggregate((acc, p) => acc / p)));
         }
 
         void DefineSequ() {

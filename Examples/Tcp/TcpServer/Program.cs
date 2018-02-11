@@ -13,10 +13,12 @@ using System.Threading.Tasks;
 using CommonInterface;
 using Ogam3.Lsp;
 using Ogam3.Network.Tcp;
+using Ogam3.Utils;
 
 namespace TcpServer {
     class Program {
         static void Main(string[] args) {
+            LogTextWriter.InitLogMode();
             var srv = new OTcpServer(1010);
 
             srv.RegisterImplementation(new ServerLogigImplementation());
