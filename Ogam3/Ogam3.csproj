@@ -53,6 +53,7 @@
     <Compile Include="Lsp\Definer.cs" />
     <Compile Include="Lsp\EnviromentFrame.cs" />
     <Compile Include="Lsp\Evaluator.cs" />
+    <Compile Include="Lsp\Generators\RemoteCallGenertor.cs" />
     <Compile Include="Lsp\Lambda.cs" />
     <Compile Include="Lsp\Params.cs" />
     <Compile Include="Lsp\Reader.cs" />

@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using Ogam3.Lsp;
+using Ogam3.Lsp.Generators;
 using Ogam3.TxRx;
 using Ogam3.Utils;
 
@@ -38,7 +39,7 @@ namespace Ogam3.Network.Tcp {
         }
 
         public T CreateInterfase<T>() {
-            return (T)Definer.CreateTcpCaller(typeof(T), this);
+            return (T)RemoteCallGenertor.CreateTcpCaller(typeof(T), this);
         }
 
         public void RegisterImplementation(object instanceOfImplementation) {
