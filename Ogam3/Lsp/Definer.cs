@@ -8,13 +8,14 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Ogam3.Lsp.Generators;
 using Ogam3.Network;
 using Ogam3.Network.Tcp;
 using Ogam3.Serialization;
 
 namespace Ogam3.Lsp {
     static class Definer {
-        public static void Define(EnviromentFrame env, object instanceOfImplementation) { // TODO is draft solution
+        private static void Define(EnviromentFrame env, object instanceOfImplementation) { // TODO is draft solution
             const BindingFlags methodFlags =
                 BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
             var type = instanceOfImplementation.GetType();
@@ -74,12 +75,12 @@ namespace Ogam3.Lsp {
         }
     }
 
-    [AttributeUsage(AttributeTargets.Interface, AllowMultiple = false)]
-    public class EnviromentAttribute : Attribute {
-        public string EnviromentName { get; }
+    //[AttributeUsage(AttributeTargets.Interface, AllowMultiple = false)]
+    //public class EnviromentAttribute : Attribute {
+    //    public string EnviromentName { get; }
 
-        public EnviromentAttribute(string enviromentName) {
-            EnviromentName = enviromentName;
-        }
-    }
+    //    public EnviromentAttribute(string enviromentName) {
+    //        EnviromentName = enviromentName;
+    //    }
+    //}
 }

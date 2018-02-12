@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace Ogam3.Lsp {
-    public class EnviromentFrame {
+    public class EnviromentFrame : IEnviromentFrame{
         public EnviromentFrame Parent;
 
         public Dictionary<string, dynamic> Variables;
@@ -56,5 +56,9 @@ namespace Ogam3.Lsp {
 
             return Parent != null && Parent.Lookup(ident);
         }
+    }
+
+    public interface IEnviromentFrame {
+        void Define(string ident, dynamic value);
     }
 }

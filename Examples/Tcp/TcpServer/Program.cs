@@ -26,14 +26,10 @@ namespace TcpServer {
             Console.WriteLine("OK");
             Console.ReadLine();
         }
-
-        static void foo<T>(T a, object o) {
-            a = (T) o;
-        }
     }
 
 
-    class ServerLogigImplementation : IServerSide {
+    public class ServerLogigImplementation : IServerSide {
         public int IntSumm(int a, int b) {
             return a + b;
         }
@@ -61,8 +57,7 @@ namespace TcpServer {
             return dto;
         }
 
-        public List<LoginDTO> GetLogins()
-        {
+        public List<LoginDTO> GetLogins() {
             var json = File.ReadAllText(@"Data\wrep-logins.json");
             var dtos = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LoginDTO>>(json);
             return dtos;

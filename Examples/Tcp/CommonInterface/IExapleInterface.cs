@@ -1,5 +1,6 @@
 ﻿using Ogam3.Lsp;
 using System.Collections.Generic;
+using Ogam3.Lsp.Generators;
 
 namespace CommonInterface {
     [Enviroment ("server-side")]

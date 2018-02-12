@@ -60,7 +60,7 @@ namespace TcpClient {
         }
     }
 
-    class ClientLogigImplementation : IClientSide {
+    public class ClientLogigImplementation : IClientSide {
         public int Power(int x) {
             return x * x;
         }

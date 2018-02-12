@@ -33,7 +33,8 @@ namespace Ogam3.Network.Tcp {
         }
 
         public void RegisterImplementation(object instanceOfImplementation) {
-            Definer.Define(Evaluator.DefaultEnviroment, instanceOfImplementation);
+            //Definer.Define(Evaluator.DefaultEnviroment, instanceOfImplementation);
+            ClassRegistrator.Register(Evaluator.DefaultEnviroment, instanceOfImplementation);
         }
 
         private void ListenerHandler(object o) {
