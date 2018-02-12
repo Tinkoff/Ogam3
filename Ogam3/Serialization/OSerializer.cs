@@ -33,10 +33,14 @@ namespace Ogam3.Serialization {
         #region Serialize
 
         public static Cons SerializeOnly(object obj) {
+            if (obj == null) return null;
+
             return Serialize(obj, obj.GetType());
         }
 
         public static Cons SerializeWithQuote(object obj) {
+            if (obj == null) return null;
+
             return new Cons(new Symbol("quote"), new Cons(Serialize(obj, obj.GetType())));
         }
 
