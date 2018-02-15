@@ -353,7 +353,7 @@ namespace Ogam3.Serialization {
                         DeserializeMember(deserializeMethod, memberType, name);
                     }
                 }
-
+                deserializeMethod.Statements.Add(MConsNext(new CodeVariableReferenceExpression("p")));
                 deserializeMethod.Statements.Add(new CodeGotoStatement("insideLoop"));
                 deserializeMethod.Statements.Add(new CodeLabeledStatement("outOfLoop"));
             }
