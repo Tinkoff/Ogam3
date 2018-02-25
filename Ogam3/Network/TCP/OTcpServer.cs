@@ -18,9 +18,7 @@ namespace Ogam3.Network.Tcp {
         public Evaluator Evaluator;
 
         public OTcpServer(int port, Evaluator evaluator = null) {
-            if (evaluator == null) {
-                Evaluator = new Evaluator();
-            }
+            Evaluator = evaluator ?? new Evaluator();
 
             _listener = new TcpListener(IPAddress.Any, port);
             _listener.Start();

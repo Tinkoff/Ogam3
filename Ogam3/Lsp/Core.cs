@@ -18,6 +18,7 @@ namespace Ogam3.Lsp {
         void DefineBool() {
             Define("#f", false);
             Define("#t", true);
+            Define("#nil", null);
 
             Define("=", new Func<double, double, dynamic>((a, b) => a == b));
             Define("eq?", new Func<dynamic, dynamic, dynamic>((a, b) => a == b));

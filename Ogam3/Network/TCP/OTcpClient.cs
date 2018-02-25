@@ -65,13 +65,16 @@ namespace Ogam3.Network.Tcp {
             return ClientTcp;
         }
 
+        public Action ConnectionStabilised;
+        public event Action<Exception> ConnectionError;
+
         private void ConnectServer() {
             var ns = new NetStream(ConnectTcp());
 
             Transfering?.Dispose();
             Transfering = new Transfering(ns, ns, BufferSize);
 
-            Transfering.ConnectionStabilised = () => { Console.WriteLine("Connection stabilised"); };
+            Transfering.ConnectionStabilised = OnConnectionStabilised;
 
             Transfering.ConnectionError = ex => {
                 lock (Transfering) {
@@ -80,6 +83,7 @@ namespace Ogam3.Network.Tcp {
 
                     _sendSync.Lock();
                     Console.WriteLine($"Connection ERROR {ex.Message}");
+                    OnConnectionError(ex);
 
                     _connSync.Pulse();
                 }
@@ -110,8 +114,17 @@ namespace Ogam3.Network.Tcp {
             else {
                 // TODO connection was broken
                 Console.WriteLine("Call error");
+                OnConnectionError(new Exception("Call error"));
                 return null;
             }
+        }
+
+        protected virtual void OnConnectionStabilised() {
+            ConnectionStabilised?.Invoke();
+        }
+
+        protected virtual void OnConnectionError(Exception ex) {
+            ConnectionError?.Invoke(ex);
         }
     }
 }
