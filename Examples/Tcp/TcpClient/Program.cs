@@ -27,13 +27,21 @@ namespace TcpClient {
 
             var pc = cli.CreateInterfase<IServerSide>();
 
+            GC.Collect();
+            GC.WaitForFullGCComplete();
+            for (int i = 0; i < 1000000; i++) {
+                var dd = pc.IntSumm(11, 33);
+                GC.Collect();
+                GC.WaitForFullGCComplete();
+            }
+
             Console.WriteLine($"pc.IntSumm(11, 33) = {pc.IntSumm(11, 33)}");
             Console.WriteLine($"pc.DoubleSumm(1.1, 3.3) = {pc.DoubleSumm(1.1, 3.3)}");
             Console.WriteLine($"pc.IntSummOfPower(11, 33) = {pc.IntSummOfPower(11, 33)}");
 
             pc.WriteMessage("Hello server!");
 
-            //pc.NotImplemented();
+            pc.NotImplemented();
 
             var dto = new ExampleDTO() {
                 DateTimeValue = DateTime.Now,

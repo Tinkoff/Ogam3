@@ -51,11 +51,10 @@ namespace Ogam3.TxRx {
 
             if (tailByteCount > 0) {
                 yield return BuildPackageX(data, rap, wholeQuantCount * quantSize, tailByteCount, quantId);
+            } else if (wholeQuantCount == 0) {
+                yield return BuildPackageX(data, rap, 0, (uint)data.Length, quantId);
             }
 
-            if (wholeQuantCount == 0) {
-                yield return BuildPackageX(data, rap, 0, 0, quantId);
-            }
         }
 
         private static byte[] CutDataQuant(byte[] data, uint start, uint length) {
