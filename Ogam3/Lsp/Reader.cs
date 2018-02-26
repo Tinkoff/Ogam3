@@ -7,6 +7,7 @@ namespace Ogam3.Lsp {
         private enum ReadState {
             Normal,
             String,
+            StringEscapeChr,
             Sharp,
             Charter,
             Comment
@@ -20,19 +21,15 @@ namespace Ogam3.Lsp {
             var isDot = false; // подумать
             var word = "";
 
+            var curent = root;
+
             var set = new Action<object>(o => {
                 if (isDot) {
-                    var cons = stack.Peek() as Cons;
-                    if (cons != null) {
-                        cons.SetCdr(o);
-                    }
-                    else {
-                        Console.WriteLine("ERROR 39");
-                    }
+                    curent.SetCdr(o);
                     isDot = false;
                 }
                 else {
-                    stack.Peek().Add(o);
+                    curent.Add(o);
                 }
             });
 
@@ -41,29 +38,20 @@ namespace Ogam3.Lsp {
                     case ReadState.Normal: {
                         if (c == '(') {
                             var nod = new Cons();
-                            stack.Peek().Add(nod);
+                            curent.Add(nod);
                             stack.Push(nod);
+                            curent = nod;
                         }
                         else if (c == ')') {
                             if (!string.IsNullOrWhiteSpace(word)) {
-                                //if (isDot) {
-                                //    var cons = stack.Peek() as Cons;
-                                //    if (cons != null) {
-                                //        cons.SetCdr(ParseSymbol(word));
-                                //    }
-                                //    else {
-                                //        Console.WriteLine("ERROR 39");
-                                //    }
-                                //    isDot = false;
-                                //}
-                                //else {
-                                //    stack.Peek().Add(ParseSymbol(word));
-                                //}
                                 set(ParseSymbol(word));
                                 word = "";
                             }
 
                             stack.Pop();
+                            if (stack.Any()) {
+                                curent = stack.Peek();
+                            }
                         }
                         else if (" \n\r\t".Any(ch => ch == c)) {
                             if (!string.IsNullOrWhiteSpace(word)) {
@@ -71,8 +59,10 @@ namespace Ogam3.Lsp {
                                     isDot = true;
                                 }
                                 else {
-                                    stack.Peek().Add(ParseSymbol(word));
+                                    curent.Add(ParseSymbol(word));
                                 }
+
+                                curent = stack.Peek();
 
                                 word = "";
                             }
@@ -88,9 +78,8 @@ namespace Ogam3.Lsp {
                         }
                         else if (c == '\'') {
                             var nod = new Cons(new Symbol("quote"));
-                            //stack.Peek().Add(nod);
                             set(nod);
-                            stack.Push(nod);
+                            curent = nod;
                         }
                         else {
                             word += c;
@@ -107,42 +96,57 @@ namespace Ogam3.Lsp {
                         switch (c) {
                             case 'T':
                             case 't':
-                                //stack.Peek().Add(true);
                                 set(true);
                                 state = ReadState.Normal;
                                 break;
                             case 'F':
                             case 'f':
-                                //stack.Peek().Add(false);
                                 set(false);
                                 state = ReadState.Normal;
                                 break;
                             case '(': {
                                 var nod = new Cons(new Symbol("vector"));
-                                //stack.Peek().Add(nod);
                                 set(nod);
                                 stack.Push(nod);
+                                curent = nod;
                                 state = ReadState.Normal;
                                 break;
                             }
                             case '\\': // read charter
                                 state = ReadState.Charter;
                                 break;
+
+                            default: {
+                                word += '#' + c;
+                                state = ReadState.Normal;
+                                break;
+                            }
+
                         }
                         break;
                     }
                     case ReadState.Charter: {
-                        //stack.Peek().Add(c);
                         set(c);
                         state = ReadState.Normal;
                         break;
                     }
+                    case ReadState.StringEscapeChr: {
+                        if (c == 'n') {
+                            word += Environment.NewLine;
+                        } else {
+                            word += c;
+                        }
+
+                        state = ReadState.String;
+                        break;
+                    }
                     case ReadState.String: { // in string
                         if (c == '\"') {
-                            //stack.Peek().Add(word);
                             set(word);
                             word = "";
                             state = ReadState.Normal;
+                        } else if (c == '\\') {  
+                            state = ReadState.StringEscapeChr;
                         }
                         else {
                             word += c;
@@ -154,7 +158,6 @@ namespace Ogam3.Lsp {
 
             if (!string.IsNullOrWhiteSpace(word)) {
                 set(state == ReadState.String ? word : ParseSymbol(word));
-                //stack.Peek().Add(state == ReadState.String ? word : ParseSymbol(word));
             }
 
             return root;

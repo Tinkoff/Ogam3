@@ -132,11 +132,20 @@ namespace Ogam3.Lsp.Generators {
             return field;
         }
 
-        private static ICollection<string> GetTypeNamespaces(Type t) {
+        private static ICollection<string> GetTypeNamespaces(Type t, List<Type> ignoreTypes = null) {
             var res = new List<string> {t.Namespace};
 
+            if (ignoreTypes == null) { // block infinity recursion
+                ignoreTypes = new List<Type>();
+            }
+            else if (ignoreTypes.Contains(t)) {
+                return new List<string>();
+            }
+
+            ignoreTypes.Add(t);
+
             if (t.IsGenericType) {
-                Array.ForEach<Type>(t.GetGenericArguments(), tt => res.AddRange(GetTypeNamespaces(tt)));
+                Array.ForEach<Type>(t.GetGenericArguments(), tt => res.AddRange(GetTypeNamespaces(tt, ignoreTypes)));
             }
 
             foreach (var mb in t.GetMembers(BindingFlags.Instance | BindingFlags.Public)) {
@@ -144,13 +153,14 @@ namespace Ogam3.Lsp.Generators {
                     var f = (FieldInfo) mb;
                     if (IsBaseType(f.FieldType))
                         continue;
-                    res.AddRange(GetTypeNamespaces(f.FieldType));
+                    res.AddRange(GetTypeNamespaces(f.FieldType, ignoreTypes));
                 }
                 else if (mb is PropertyInfo) {
                     var p = (PropertyInfo) mb;
                     if (IsBaseType(p.PropertyType))
                         continue;
-                    res.AddRange(GetTypeNamespaces(p.PropertyType));
+                    //if (res.Contains())
+                    res.AddRange(GetTypeNamespaces(p.PropertyType, ignoreTypes));
                 }
             }
             return res.Distinct().ToList();
