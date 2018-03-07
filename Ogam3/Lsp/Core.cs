@@ -13,6 +13,7 @@ namespace Ogam3.Lsp {
             DefineIO();
             DefineSequ();
             DefineTools();
+            DefineClrTools();
         }
 
         void DefineBool() {
@@ -144,6 +145,72 @@ namespace Ogam3.Lsp {
                 });
 
                 return true;
+            }));
+        }
+
+        void DefineClrTools() {
+            Define("new", new Func<Params, dynamic>((par) => {
+                if (!par.Any()) {
+                    throw new Exception("Arity");
+                }
+
+                var args = par.Skip(1).ToArray();
+
+                var fullyQualifiedName = "";
+                if (par[0] is Symbol) {
+                    fullyQualifiedName = (par[0] as Symbol).Name;
+                } else if (par[0] is string) {
+                    fullyQualifiedName = par[0] as string;
+                } else throw new Exception("Expected Symbol or string");
+
+                if (string.IsNullOrWhiteSpace(fullyQualifiedName)) {
+                    throw new Exception("FullyQualifiedName is empty");
+                }
+
+                Type type = Type.GetType(fullyQualifiedName);
+                if (type != null)
+                    return Activator.CreateInstance(type, args);
+                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies()) {
+                    type = asm.GetType(fullyQualifiedName);
+                    if (type != null)
+                        return Activator.CreateInstance(type, args);
+                }
+
+                throw new Exception("Class not found");
+            }));
+
+            Define("get-member", new Func<object, object, dynamic>((inst, name) => {
+                if (inst == null) return null;
+
+                var memberName = "";
+                if (name is Symbol) {
+                    memberName = (name as Symbol).Name;
+                } else if (name is string) {
+                    memberName = name as string;
+                } else throw new Exception("Expected Symbol or string");
+
+                if (string.IsNullOrWhiteSpace(memberName)) {
+                    throw new Exception("MemberName is empty");
+                }
+
+                return Reflect.GetPropValue(inst, memberName);
+            }));
+
+            Define("set-member!", new Func<object, object, object, dynamic>((inst, name, value) => {
+                if (inst == null) return null;
+
+                var memberName = "";
+                if (name is Symbol) {
+                    memberName = (name as Symbol).Name;
+                } else if (name is string) {
+                    memberName = name as string;
+                } else throw new Exception("Expected Symbol or string");
+
+                if (string.IsNullOrWhiteSpace(memberName)) {
+                    throw new Exception("MemberName is empty");
+                }
+
+                return Reflect.SetPropValue(inst, memberName, value);
             }));
         }
     }

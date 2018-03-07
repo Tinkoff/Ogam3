@@ -58,6 +58,7 @@
     <Compile Include="Lsp\Lambda.cs" />
     <Compile Include="Lsp\Params.cs" />
     <Compile Include="Lsp\Reader.cs" />
+    <Compile Include="Lsp\Reflect.cs" />
     <Compile Include="Lsp\SpecialMessage.cs" />
     <Compile Include="Lsp\Symbol.cs" />
     <Compile Include="Lsp\TailCall.cs" />

@@ -49,7 +49,7 @@ namespace Ogam3.Lsp {
             Cons form = (Cons) exp;
             dynamic val = null;
 
-            var op = (Symbol) form.Car();
+            var op = form.Car() as Symbol;
             Cons arguments = (Cons) form.Cdr();
 
             if (op != null) {

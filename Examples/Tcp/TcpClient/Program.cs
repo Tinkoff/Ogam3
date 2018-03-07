@@ -14,6 +14,11 @@ using Ogam3.Network.Tcp;
 namespace TcpClient {
     class Program {
         static void Main(string[] args) {
+            "(define obj (new 'TcpClient.ClientLogigImplementation))".O3Eval();
+            "(set-member! obj 'Power 3)".O3Eval();
+            var tt = "((get-member obj 'Power) (get-member obj 'Some))".O3Eval();
+
+
             var cli = new OTcpClient("localhost", 1010);
 
             cli.RegisterImplementation(new ClientLogigImplementation());
@@ -72,5 +77,7 @@ namespace TcpClient {
         public int Power(int x) {
             return x * x;
         }
+
+        public int Some = 1133;
     }
 }
