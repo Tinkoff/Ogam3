@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Ogam3.Lsp {
-    class Core : EnviromentFrame {
+    public class Core : EnviromentFrame {
         public Core() {
             DefineBool();
             DefineMath();
@@ -149,6 +151,15 @@ namespace Ogam3.Lsp {
         }
 
         void DefineClrTools() {
+            //var ap = @"Z:\\GIT\\TCS\\Bellatrix\\ComonClasses\\Scanning\\bin\\Debug\\Scanning.dll";
+
+            //$"(load-assembly \"{ap}\")".O3Eval();
+            //"(define scanner (new 'Scanning.Scanner))".O3Eval();
+            //"((get-member scanner 'SetDuplexMode) #t)((get-member scanner 'Scan) \"scans\")((get-member scanner 'Scan) \"scans\")".O3Eval();
+            //"(define obj (new 'TcpClient.ClientLogigImplementation))".O3Eval();
+            //"(set-member! obj 'Some 3)".O3Eval();
+            //var tt = "((get-member obj 'Power) (get-member obj 'Some))".O3Eval();
+
             Define("new", new Func<Params, dynamic>((par) => {
                 if (!par.Any()) {
                     throw new Exception("Arity");
@@ -211,6 +222,21 @@ namespace Ogam3.Lsp {
                 }
 
                 return Reflect.SetPropValue(inst, memberName, value);
+            }));
+
+            Define("load-assembly", new Func<string, bool>((path) => {
+
+                if (string.IsNullOrWhiteSpace(path)) {
+                    throw new Exception("Path is empty");
+                }
+
+                if (!File.Exists(path)) {
+                    throw new Exception("Assembly not found");
+                }
+
+                Assembly.LoadFrom(path);
+
+                return true;
             }));
         }
     }

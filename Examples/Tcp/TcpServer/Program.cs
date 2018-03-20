@@ -28,7 +28,6 @@ namespace TcpServer {
         }
     }
 
-
     public class ServerLogigImplementation : IServerSide {
         public int IntSumm(int a, int b) {
             return a + b;

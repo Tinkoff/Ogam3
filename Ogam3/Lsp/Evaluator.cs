@@ -17,23 +17,26 @@ namespace Ogam3.Lsp {
         }
 
         public object EvlString(string str, EnviromentFrame env) {
-            object res = null;
-            foreach (var exp in Reader.Read(str).GetIterator()) {
-                res = Eval(exp.Car(), env);
-            }
+            return VirtualMashine.Eval(Compiler.Compile(str), env);
+            //object res = null;
+            //foreach (var exp in Reader.Read(str).GetIterator()) {
+            //    res = Eval(exp.Car(), env);
+            //}
 
-            return res;
+            //return res;
         }
 
         public object EvlSeq(Cons seq, EnviromentFrame env) {
-            object res = null;
-            foreach (var exp in seq.GetIterator()) {
-                res = Eval(exp.Car(), env);
-            }
+            return VirtualMashine.Eval(Compiler.Compile(seq), env);
+            //object res = null;
+            //foreach (var exp in seq.GetIterator()) {
+            //    res = Eval(exp.Car(), env);
+            //}
 
-            return res;
+            //return res;
         }
 
+        // old implementation
         static dynamic Eval(dynamic exp, EnviromentFrame env) {
             start:
 

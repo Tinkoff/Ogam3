@@ -37,6 +37,11 @@ namespace Ogam3.Lsp {
                 switch (state) {
                     case ReadState.Normal: {
                         if (c == '(') {
+                            if (!string.IsNullOrWhiteSpace(word)) {
+                                set(ParseSymbol(word));
+                                word = "";
+                            }
+
                             var nod = new Cons();
                             curent.Add(nod);
                             stack.Push(nod);

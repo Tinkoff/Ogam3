@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Lsp\BinFormater.cs" />
+    <Compile Include="Lsp\Compiler.cs" />
     <Compile Include="Lsp\Cons.cs" />
     <Compile Include="Lsp\Continuation.cs" />
     <Compile Include="Lsp\Core.cs" />
@@ -62,6 +63,7 @@
     <Compile Include="Lsp\SpecialMessage.cs" />
     <Compile Include="Lsp\Symbol.cs" />
     <Compile Include="Lsp\TailCall.cs" />
+    <Compile Include="Lsp\VM.cs" />
     <Compile Include="Network\ISomeClient.cs" />
     <Compile Include="Network\TCP\NetStream.cs" />
     <Compile Include="Network\TCP\OTcpClient.cs" />

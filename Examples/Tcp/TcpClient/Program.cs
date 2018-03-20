@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
@@ -14,11 +16,6 @@ using Ogam3.Network.Tcp;
 namespace TcpClient {
     class Program {
         static void Main(string[] args) {
-            "(define obj (new 'TcpClient.ClientLogigImplementation))".O3Eval();
-            "(set-member! obj 'Power 3)".O3Eval();
-            var tt = "((get-member obj 'Power) (get-member obj 'Some))".O3Eval();
-
-
             var cli = new OTcpClient("localhost", 1010);
 
             cli.RegisterImplementation(new ClientLogigImplementation());
@@ -31,14 +28,6 @@ namespace TcpClient {
             };
 
             var pc = cli.CreateInterfase<IServerSide>();
-
-            GC.Collect();
-            GC.WaitForFullGCComplete();
-            for (int i = 0; i < 1000000; i++) {
-                var dd = pc.IntSumm(11, 33);
-                GC.Collect();
-                GC.WaitForFullGCComplete();
-            }
 
             Console.WriteLine($"pc.IntSumm(11, 33) = {pc.IntSumm(11, 33)}");
             Console.WriteLine($"pc.DoubleSumm(1.1, 3.3) = {pc.DoubleSumm(1.1, 3.3)}");
