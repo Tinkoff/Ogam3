@@ -52,14 +52,14 @@ namespace Ogam3.Lsp {
 
                         if (defi is Cons) { // function
                             var name = (Symbol) defi.Car();
-                            var args = defi.Cdr().Car() == null ? new Symbol[0] : (defi.Cdr() as Cons).GetIterator().Select(i => (Symbol) i.Car()).ToArray();
+                            var args = defi.Cdr().Car() == null ? new Symbol[0] : (defi.Cdr() as Cons).GetIterator().Select(i => i.Car() as Symbol).ToArray();
                             return Operation.Close(args, CompileBegin(arguments?.Cdr() as Cons, Operation.Return()), Operation.Extend(name, next));
                         }
 
                         throw new Exception($"define bad syntax: {exp}");
                     }
                     case "set!":
-                        return Compile(arguments?.Cdr().Car(), Operation.Assign((Symbol) arguments?.Car(), next));
+                        return Compile(arguments?.Cdr().Car(), Operation.Assign(arguments?.Car() as Symbol, next));
                     case "call/cc": {
                         var c2 = Operation.Conti(Operation.Argument(Compile(arguments?.Car(), Operation.Apply())));
                         if (next.Cmd == Operation.Comand.Return) {

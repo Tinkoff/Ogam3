@@ -57,12 +57,12 @@ namespace Ogam3.Lsp {
                     }
                     case Operation.Comand.Conti: {
                         var var = "v".O3Symbol();
-                        a = new Closure(Operation.Nuate(new TrueStack(trueStack), var), new EnviromentFrame(), new [] {var});
+                        a = new Closure(Operation.Nuate(TrueStack.Clone(trueStack), var), new EnviromentFrame(), new [] {var});
                         x = x.Branch1;
                         break;
                     }
                     case Operation.Comand.Nuate: {
-                        trueStack = new TrueStack((TrueStack)x.Value);
+                        trueStack = TrueStack.Clone(x.Value as TrueStack);
                         a = e.Get(x.Var);
                         x = Operation.Return();
                         break;
@@ -135,8 +135,8 @@ namespace Ogam3.Lsp {
                         throw new Exception($"{a} is not a callable");
                     }
                     case Operation.Comand.Return: {
-                        x = (Operation)trueStack.Pop();
-                        e = (EnviromentFrame)trueStack.Pop();
+                        x = trueStack.Pop() as Operation;
+                        e = trueStack.Pop() as EnviromentFrame;
                         size = (int)trueStack.Pop();
                         break;
                     }
@@ -147,8 +147,13 @@ namespace Ogam3.Lsp {
         class TrueStack : Stack<object> {
             public TrueStack(int cap) : base(cap){}
             public TrueStack() { }
-
-            public TrueStack(TrueStack collection) : base(collection){}
+            private TrueStack(IEnumerable<object> imts) : base(imts){}
+            public static TrueStack Clone(TrueStack original) {
+                var arr = new object[original.Count];
+                original.CopyTo(arr, 0);
+                Array.Reverse(arr);
+                return new TrueStack(arr);
+            }
         }
 
         public static bool GetSBool(object o) {
