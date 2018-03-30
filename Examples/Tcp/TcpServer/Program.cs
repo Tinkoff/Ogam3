@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -21,9 +22,17 @@ namespace TcpServer {
             LogTextWriter.InitLogMode();
             var srv = new OTcpServer(1010);
 
-            srv.RegisterImplementation(new ServerLogigImplementation());
+            var impl = new ServerLogigImplementation();
+
+            srv.RegisterImplementation(impl);
 
             Console.WriteLine("OK");
+            while (true) {
+                Console.ReadLine();
+                foreach (var implSubscribe in impl.Subscribes) {
+                    Console.WriteLine(implSubscribe.Power(2));
+                }
+            }
             Console.ReadLine();
         }
     }
@@ -60,6 +69,21 @@ namespace TcpServer {
             var json = File.ReadAllText(@"Data\wrep-logins.json");
             var dtos = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LoginDTO>>(json);
             return dtos;
+        }
+
+        public List<IClientSide> Subscribes = new List<IClientSide>();
+        public void Subscribe() {
+            var pc = OTcpServer.ContexReClient.CreateInterfase<IClientSide>();
+            lock (Subscribes) {
+                if (!Subscribes.Contains(pc)) {
+                    Subscribes.Add(pc);
+                    OTcpServer.ContexReClient.ConnectionError += exception => {
+                        lock (Subscribes) {
+                            Subscribes.Remove(pc);
+                        }
+                    };
+                }
+            }
         }
     }
 }

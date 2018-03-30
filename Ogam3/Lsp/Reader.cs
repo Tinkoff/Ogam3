@@ -14,7 +14,7 @@ namespace Ogam3.Lsp {
         }
 
         public static Cons Read(string str) {
-            var stack = new Stack<dynamic>();
+            var stack = new Stack<Cons>();
             var root = new Cons();
             stack.Push(root);
             var state = ReadState.Normal;
@@ -159,7 +159,7 @@ namespace Ogam3.Lsp {
                         break;
                     }
                 }
-            } // forech c
+            } // foreach c
 
             if (!string.IsNullOrWhiteSpace(word)) {
                 set(state == ReadState.String ? word : ParseSymbol(word));

@@ -14,6 +14,9 @@ namespace TestEvaluator {
             //"(loop 10 (lambda () #t))".OgamEval();
 
             //"(define (l) #t (l))(l)".OgamEval();
+            var dff = "(define s 10) s".O3Eval();
+
+            var gg = "1".O3Eval();
 
             var y ="(+(+ 11 13) 1 2 3)".O3Eval();
 

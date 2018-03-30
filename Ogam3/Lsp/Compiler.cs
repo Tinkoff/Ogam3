@@ -101,20 +101,20 @@ namespace Ogam3.Lsp {
         public object Value;
 
         public enum Comand {
-            Nop = 0,
-            Halt = 1,
-            Refer = 2,
-            Constant = 3,
-            Close = 4,
-            Test = 5,
-            Extend = 6,
-            Assign = 7,
-            Conti = 8,
-            Nuate = 9,
-            Frame = 10,
-            Argument = 11,
-            Apply = 12,
-            Return = 13
+            Nop,
+            Halt,
+            Refer,
+            Constant,
+            Close,
+            Test,
+            Extend,
+            Assign,
+            Conti,
+            Nuate,
+            Frame,
+            Argument,
+            Apply,
+            Return
         }
 
         public Operation(Comand cmd) {

@@ -111,8 +111,15 @@ namespace Ogam3.Network.Tcp {
             private Transfering _transfering;
             private Evaluator _evaluator;
 
+            public event Action<Exception> ConnectionError;
+
+            protected virtual void OnConnectionError(Exception ex) {
+                ConnectionError?.Invoke(ex);
+            }
+
             public ReClient(Transfering transfering, Evaluator _evaluator) {
                 _transfering = transfering;
+                _transfering.ConnectionError += OnConnectionError;
             }
 
             public T CreateInterfase<T>() {

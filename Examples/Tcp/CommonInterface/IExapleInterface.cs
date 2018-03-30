@@ -12,6 +12,7 @@ namespace CommonInterface {
         void NotImplemented();
         ExampleDTO TestSerializer(ExampleDTO dto);
         List<LoginDTO> GetLogins();
+        void Subscribe();
     }
 
     [Enviroment ("client-side")]

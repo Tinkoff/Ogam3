@@ -50,7 +50,7 @@ namespace Ogam3.Lsp {
         }
 
         public static Cons Read(MemoryStream data) {
-            var stack = new Stack<dynamic>();
+            var stack = new Stack<Cons>();
             var root = new Cons();
             stack.Push(root);
             var isQuote = false;
@@ -58,7 +58,7 @@ namespace Ogam3.Lsp {
 
             var set = new Action<object>(o => {
                 if (isDot) {
-                    (stack.Peek() as Cons).SetCdr(o);
+                    stack.Peek().SetCdr(o);
                     isDot = false;
                 }
                 else {

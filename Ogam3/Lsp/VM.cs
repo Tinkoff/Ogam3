@@ -18,7 +18,7 @@ namespace Ogam3.Lsp {
         static object VM3(Operation operation, EnviromentFrame e) {
             object a = null;
             var x = operation;
-            var size = 0;
+            var rib = 0;
 
             var trueStack = new TrueStack(100);
 
@@ -68,19 +68,19 @@ namespace Ogam3.Lsp {
                         break;
                     }
                     case Operation.Comand.Frame: {
-                        trueStack.Push(size);
+                        trueStack.Push(rib);
                         trueStack.Push(e);
                         trueStack.Push(x.Branch2);
 
                         x = x.Branch1;
                         
-                        size = 0;
+                        rib = 0;
                         break;
                     }
                     case Operation.Comand.Argument: {
                         trueStack.Push(a);
                         x = x.Branch1;
-                        size++;
+                        rib++;
                         break;
                     }
                     case Operation.Comand.Apply: {
@@ -93,13 +93,13 @@ namespace Ogam3.Lsp {
                             foreach (var pi in parameters) {
                                 if (typeof(Params) == pi.ParameterType) {
                                     var par = new Params();
-                                    while (argCnt++ < size) {
+                                    while (argCnt++ < rib) {
                                         par.Add(trueStack.Pop());
                                     }
                                     cArg.Add(par);
                                 }
                                 else {
-                                    if (argCnt++ < size) {
+                                    if (argCnt++ < rib) {
                                         cArg.Add(trueStack.Pop());
                                     }
                                 }
@@ -119,15 +119,15 @@ namespace Ogam3.Lsp {
                             x = func.Body;
                             e = new EnviromentFrame(func.En);
 
-                            if (size != func.Argument.Length) {
-                                throw new Exception($"Arity mismatch, expected {func.Argument.Length}, given {size} arguments");
+                            if (rib != func.Argument.Length) {
+                                throw new Exception($"Arity mismatch, expected {func.Argument.Length}, given {rib} arguments");
                             }
 
                             foreach (var arg in func.Argument) {
                                 e.Define(arg, trueStack.Pop());
                             }
 
-                            size = 0;
+                            rib = 0;
 
                             break;
                         }
@@ -137,7 +137,7 @@ namespace Ogam3.Lsp {
                     case Operation.Comand.Return: {
                         x = trueStack.Pop() as Operation;
                         e = trueStack.Pop() as EnviromentFrame;
-                        size = (int)trueStack.Pop();
+                        rib = (int)trueStack.Pop();
                         break;
                     }
                 }

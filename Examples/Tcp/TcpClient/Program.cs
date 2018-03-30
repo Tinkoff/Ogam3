@@ -53,6 +53,8 @@ namespace TcpClient {
 
             var logins = pc.GetLogins();
 
+            pc.Subscribe();
+
             while (true) {
                 Console.Write("CLI > ");
                 var seq = Reader.Read(Console.ReadLine());
