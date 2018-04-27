@@ -5,7 +5,7 @@ using System.Text;
 using Ogam3.Lsp;
 
 namespace Ogam3 {
-    public static class StingExtension {
+    public static class StringExtension {
         public static Evaluator Evaluator = new Evaluator(); // default evaluator
         public static Symbol O3Symbol(this string s) {
             return new Symbol(s);

@@ -25,7 +25,6 @@ namespace Ogam3.TxRx {
 
         public override bool CanRead {
             get { return true; }
-            //get { return readPosition <= innerStream.Position; }
         }
 
         public override bool CanSeek {

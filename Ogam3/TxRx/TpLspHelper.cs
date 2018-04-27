@@ -124,7 +124,6 @@ namespace Ogam3.TxRx {
         static byte[] Compress(byte[] data) {
             using (var compressedStream = new MemoryStream()) {
                 using (var zipStream = new LZ4Stream(compressedStream, CompressionMode.Compress)) {
-// GZipStream DeflateStream
                     zipStream.Write(data, 0, data.Length);
                     zipStream.Close();
                     return compressedStream.ToArray();

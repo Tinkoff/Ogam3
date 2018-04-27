@@ -109,27 +109,11 @@ namespace Ogam3.TxRx {
             StartListener(_receiveStream, (rap, data) => {
                 Action<byte[]> receiveAct = null;
                 if (_synchronizer.TryGetValue(rap, out receiveAct)) {
-                    //receiveAct(data);
-
-                    //receiveAct.BeginInvoke(data, null, null);
-
                     receiveResponcePool.QueueWorkItem(() => {
                         receiveAct(data);
                     });
                 }
                 else {
-                    //requestHandler.BeginInvoke(data, ar => { // bad solution
-                    //    var result = requestHandler.EndInvoke(ar);
-                    //    SendManager(result, rap);
-                    //}, null);
-
-
-                    //SendManager(requestHandler(data), rap); // fast
-
-                    //new Thread(() => {
-                    //    SendManager(requestHandler(data), rap); // allow callbacks
-                    //}) { IsBackground = true }.Start();
-
                     receiveRequestPool.QueueWorkItem(() => {
                         SendManager(requestHandler(data), rap);
                     });
@@ -162,21 +146,12 @@ namespace Ogam3.TxRx {
                                     var result = db.GetData();
 
                                     pkgBuilder.Remove(tpLspS.QuantId);
-                                    //var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
-
-                                    //Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
-
-                                    //receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
                                     receiveDataSet.Invoke(tpLspS.Rap, result);
                                 }
 
                             }
                             else {
                                 var result = tpLspS.QuantData;
-                                //var speed = result.Length / 1024.0 / 1024.0 * (1000.0 / ((double) w.ElapsedMilliseconds / cnt));
-                                //Console.WriteLine($"[{cnt++}]Received {result.Length} bytes {speed:000.000}MB/Sec");
-
-                                //receiveDataSet.BeginInvoke(tpLspS.Rap, result, null, null);
                                 receiveDataSet.Invoke(tpLspS.Rap, result);
                             }
                         }

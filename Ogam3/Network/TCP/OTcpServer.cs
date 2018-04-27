@@ -31,7 +31,6 @@ namespace Ogam3.Network.Tcp {
         }
 
         public void RegisterImplementation(object instanceOfImplementation) {
-            //Definer.Define(Evaluator.DefaultEnviroment, instanceOfImplementation);
             ClassRegistrator.Register(Evaluator.DefaultEnviroment, instanceOfImplementation);
         }
 
@@ -39,9 +38,6 @@ namespace Ogam3.Network.Tcp {
             var listener = (TcpListener) o;
             while (true) {
                 var client = listener.AcceptTcpClient();
-                //var Thread = new Thread(ClientConnection);
-                //Thread.IsBackground = true;
-                //Thread.Start(client);
                 ClientConnection(client);
             }
         }
@@ -127,7 +123,6 @@ namespace Ogam3.Network.Tcp {
             }
 
             public object Call(object seq) {
-                //return BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray()))).Car();
                 var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray())));
 
                 return resp?.Car();

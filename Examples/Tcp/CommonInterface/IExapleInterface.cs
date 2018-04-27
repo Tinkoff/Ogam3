@@ -11,12 +11,12 @@ namespace CommonInterface {
         void WriteMessage(string text);
         void NotImplemented();
         ExampleDTO TestSerializer(ExampleDTO dto);
-        List<LoginDTO> GetLogins();
         void Subscribe();
     }
 
     [Enviroment ("client-side")]
     public interface IClientSide {
         int Power(int x);
+        void Notify(string msg);
     }
 }

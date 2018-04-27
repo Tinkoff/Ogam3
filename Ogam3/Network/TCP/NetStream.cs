@@ -29,7 +29,6 @@ namespace Ogam3.Network.Tcp {
             tcpClient.GetStream().Write(buffer, offset, count);
         }
         public override bool CanRead {
-            //get { return neTcpClient.GetStream().CanRead && neTcpClient.GetStream().DataAvailable; }
             get { return true; }
         }
         public override bool CanSeek {

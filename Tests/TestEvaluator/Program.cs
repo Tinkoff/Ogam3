@@ -10,16 +10,6 @@ using Ogam3;
 namespace TestEvaluator {
     class Program {
         static void Main(string[] args) { // TODO
-            //"(define (loop step expr) (display step) (if (> step 0) (begin (set! step (- step 1)) (expr) (loop step expr))))".OgamEval();
-            //"(loop 10 (lambda () #t))".OgamEval();
-
-            //"(define (l) #t (l))(l)".OgamEval();
-            var dff = "(define s 10) s".O3Eval();
-
-            var gg = "1".O3Eval();
-
-            var y ="(+(+ 11 13) 1 2 3)".O3Eval();
-
             Base();
             IntrnalState();
             ThreadSafe();

@@ -38,12 +38,11 @@ namespace Ogam3.Network.Tcp {
             }) {IsBackground = true}.Start();
         }
 
-        public T CreateInterfase<T>() {
+        public T CreateProxy<T>() {
             return (T)RemoteCallGenertor.CreateTcpCaller(typeof(T), this);
         }
 
         public void RegisterImplementation(object instanceOfImplementation) {
-            //Definer.Define(Evaluator.DefaultEnviroment, instanceOfImplementation);
             ClassRegistrator.Register(Evaluator.DefaultEnviroment, instanceOfImplementation);
         }
 

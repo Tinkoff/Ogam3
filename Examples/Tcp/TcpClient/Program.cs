@@ -16,19 +16,20 @@ using Ogam3.Network.Tcp;
 namespace TcpClient {
     class Program {
         static void Main(string[] args) {
+            // Create connection
             var cli = new OTcpClient("localhost", 1010);
-
+            // Register client interface implementation
             cli.RegisterImplementation(new ClientLogigImplementation());
-
+            // Set server error handler
             cli.SpecialMessageEvt += (message, o) => {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($">> {o}");
                 Console.WriteLine($"<< {message}");
                 Console.ResetColor();
             };
-
-            var pc = cli.CreateInterfase<IServerSide>();
-
+            // Create proxy
+            var pc = cli.CreateProxy<IServerSide>();
+            // Server calls
             Console.WriteLine($"pc.IntSumm(11, 33) = {pc.IntSumm(11, 33)}");
             Console.WriteLine($"pc.DoubleSumm(1.1, 3.3) = {pc.DoubleSumm(1.1, 3.3)}");
             Console.WriteLine($"pc.IntSummOfPower(11, 33) = {pc.IntSummOfPower(11, 33)}");
@@ -50,9 +51,6 @@ namespace TcpClient {
 
             Console.WriteLine($"DTO {echoDto.DateTimeValue}");
 
-
-            var logins = pc.GetLogins();
-
             pc.Subscribe();
 
             while (true) {
@@ -69,6 +67,8 @@ namespace TcpClient {
             return x * x;
         }
 
-        public int Some = 1133;
+        public void Notify(string msg) {
+            Console.WriteLine($"SERVER-NOTIFY> {msg}");
+        }
     }
 }
