@@ -205,7 +205,7 @@ namespace Ogam3.Lsp.Generators {
                 //**  TODO AT THIS LINE SHOULD BE THE SERIALIZER  **
                 //**************************************************
 
-                if (BinFormater.IsPrimitive(arg.ParameterType)) {
+                if (BinFormater.IsPrimitive(arg.ParameterType) || IsNullablePrimitive(arg.ParameterType)) {
                     listBuilderParams.Add(new CodeArgumentReferenceExpression(arg.Name));
                 }
                 else {
@@ -238,7 +238,7 @@ namespace Ogam3.Lsp.Generators {
                 //**  TODO AT THIS LINE SHOULD BE THE DESERIALIZER  **
                 //****************************************************
                 CodeExpression prepareResult = null;
-                if (BinFormater.IsPrimitive(returnType)) {
+                if (BinFormater.IsPrimitive(returnType) || IsNullablePrimitive(returnType)) {
                     prepareResult = requestResultRef;
                 }
                 else {
@@ -265,6 +265,14 @@ namespace Ogam3.Lsp.Generators {
             }
 
             return callMethod;
+        }
+
+        static bool IsNullablePrimitive(Type t) {
+            return IsNullable(t) && BinFormater.IsPrimitive(Nullable.GetUnderlyingType(t));
+        }
+
+        static bool IsNullable(Type t) {
+            return t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
 
 

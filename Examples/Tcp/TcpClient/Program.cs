@@ -42,6 +42,10 @@ namespace TcpClient {
             Console.WriteLine($"pc.DoubleSumm(1.1, 3.3) = {pc.DoubleSumm(1.1, 3.3)}");
             Console.WriteLine($"pc.IntSummOfPower(11, 33) = {pc.IntSummOfPower(11, 33)}");
 
+            Console.WriteLine($"pc.QuadraticEquation(1,2,3) = {QuadraticString(pc.QuadraticEquation(1,2,3))}");
+            Console.WriteLine($"pc.QuadraticEquation(2,4,-7) = {QuadraticString(pc.QuadraticEquation(2,4,-7))}");
+            Console.WriteLine($"pc.QuadraticEquation(1,6,9) = {QuadraticString(pc.QuadraticEquation(1,6,9))}");
+
             pc.WriteMessage("Hello server!");
 
             pc.NotImplemented();
@@ -67,6 +71,22 @@ namespace TcpClient {
                 var result = cli.Call(seq.Car());
                 Console.WriteLine($"RES > {result ?? "null"}");
             }
+        }
+
+        private static string QuadraticString(Roots? r) {
+            if (!r.HasValue) {
+                return "No roots";
+            }
+
+            if (r.Value.X2.HasValue && r.Value.X1.HasValue) {
+                return $"X1 = {r.Value.X1}, X2 = {r.Value.X2}";
+            }
+
+            if (r.Value.X1.HasValue) {
+                return $"X1 = {r.Value.X1}";
+            }
+
+            return "error";
         }
     }
 

@@ -90,5 +90,21 @@ namespace TcpServer {
                 }
             }
         }
+
+        public Roots? QuadraticEquation(double? a, double? b, double? c) {
+            if (!(a.HasValue && b.HasValue && c.HasValue)) {
+                return null;
+            }
+
+            var d = Math.Pow(b.Value, 2) - 4 * a.Value * c.Value;
+
+            if (d < 0) return null;
+
+            if (d > 0) {
+                return new Roots() {X1 = (-b + Math.Sqrt(d)) / (2 * a), X2 = (-b + Math.Sqrt(d)) / (2 * a)};
+            }
+
+            return new Roots() {X1 = -b / (2 * a)};
+        }
     }
 }

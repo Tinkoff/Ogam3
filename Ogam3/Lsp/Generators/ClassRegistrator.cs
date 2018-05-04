@@ -191,7 +191,7 @@ namespace Ogam3.Lsp.Generators {
 
             foreach (var arg in arguments) {
                 var argRef = new CodeArgumentReferenceExpression(arg.Name);
-                if (BinFormater.IsPrimitive(arg.ParameterType)) {
+                if (BinFormater.IsPrimitive(arg.ParameterType) || IsNullablePrimitive(arg.ParameterType)) {
                     listBuilderParams.Add(argRef);
                 }
                 else {
@@ -209,7 +209,7 @@ namespace Ogam3.Lsp.Generators {
             if (returnType == typeof(void)) {
                 callMethod.Statements.Add(invokeImpl);
             }
-            else if (BinFormater.IsPrimitive(returnType)) {
+            else if (BinFormater.IsPrimitive(returnType) || IsNullablePrimitive(returnType)) {
                 callMethod.Statements.Add(new CodeMethodReturnStatement(invokeImpl));
             }
             else {
@@ -222,8 +222,17 @@ namespace Ogam3.Lsp.Generators {
             return callMethod;
         }
 
+        static bool IsNullablePrimitive(Type t) {
+            return IsNullable(t) && BinFormater.IsPrimitive(Nullable.GetUnderlyingType(t));
+        }
+
+        static bool IsNullable(Type t) {
+            return t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>);
+        }
+
         static Type GetProxyPType(Type t) {
-            return BinFormater.IsPrimitive(t) || t == typeof(void) ? t : typeof(Cons);
+            return BinFormater.IsPrimitive(t) || t == typeof(void) ? t : (IsNullablePrimitive(t) ? t : typeof(Cons));
+            //return BinFormater.IsPrimitive(t) || t == typeof(void) ? t : typeof(Cons);
         }
 
         static CodeConstructor CreateCtor(Type implementationType, List<MethodDescriptors> descriptors) {

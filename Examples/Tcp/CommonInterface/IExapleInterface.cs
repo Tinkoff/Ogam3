@@ -26,6 +26,12 @@ namespace CommonInterface {
         void NotImplemented();
         ExampleDTO TestSerializer(ExampleDTO dto);
         void Subscribe();
+        Roots? QuadraticEquation(double? a, double? b, double? c);
+    }
+
+    public struct Roots {
+        public double? X1;
+        public double? X2;
     }
 
     [Enviroment ("client-side")]
