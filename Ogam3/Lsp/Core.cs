@@ -27,7 +27,6 @@ namespace Ogam3.Lsp {
         public Core() {
             DefineBool();
             DefineMath();
-            DefineMath();
             DefineIO();
             DefineSequ();
             DefineTools();
