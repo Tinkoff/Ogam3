@@ -92,11 +92,14 @@ namespace Ogam3.Serialization {
             if (typeParam.IsGenericType && typeParam.GetGenericTypeDefinition() == typeof(Nullable<>)) {
                 var internalType = typeParam.GetGenericArguments()[0];
                 return (obj) => {
+
                     if (obj == null)
-                        return new Cons();
+                        return null;
+
                     return BinFormater.IsPrimitive(internalType)
                         ? new Cons(obj)
-                        : new Cons(Serialize(obj, internalType));
+                        : Serialize(obj, internalType);
+
                 };
             }
             return GeneratePropsAndFieldsSerializer(typeParam);
@@ -287,7 +290,7 @@ namespace Ogam3.Serialization {
                     deserializeMethod.Statements.Add(new CodeAssignStatement(
                         new CodeVariableReferenceExpression("result"),
                         MAsOperatorExpression(internalType,
-                            MDeserializeExpression(internalType, MCar(new CodeArgumentReferenceExpression("pair"))))));
+                            MDeserializeExpression(internalType, new CodeArgumentReferenceExpression("pair")))));
             }
             else if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(KeyValuePair<,>)) {
                 var internalType1 = t.GetGenericArguments()[0];
