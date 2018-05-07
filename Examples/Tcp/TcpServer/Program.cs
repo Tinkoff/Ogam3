@@ -54,7 +54,7 @@ namespace TcpServer {
 
         // This method show client call from server
         public int IntSummOfPower(int a, int b) {
-            var pc = OTcpServer.ContexReClient.CreateInterfase<IClientSide>();
+            var pc = OTcpServer.ContexReClient.CreateProxy<IClientSide>();
             return pc.Power(a) + pc.Power(b);
         }
 
@@ -78,7 +78,7 @@ namespace TcpServer {
 
         public List<IClientSide> Subscribes = new List<IClientSide>();
         public void Subscribe() {
-            var pc = OTcpServer.ContexReClient.CreateInterfase<IClientSide>();
+            var pc = OTcpServer.ContexReClient.CreateProxy<IClientSide>();
             lock (Subscribes) {
                 if (!Subscribes.Contains(pc)) {
                     Subscribes.Add(pc);

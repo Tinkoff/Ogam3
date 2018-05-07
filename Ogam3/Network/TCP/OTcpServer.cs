@@ -132,7 +132,7 @@ namespace Ogam3.Network.Tcp {
                 _transfering.ConnectionError += OnConnectionError;
             }
 
-            public T CreateInterfase<T>() {
+            public T CreateProxy<T>() {
                 return (T)RemoteCallGenertor.CreateTcpCaller(typeof(T), this);
             }
 
