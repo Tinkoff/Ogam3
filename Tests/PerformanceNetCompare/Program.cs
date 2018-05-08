@@ -12,36 +12,47 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Ogam3.Network.Tcp;
+using Ogam3.Utils;
 
 namespace PerformanceNetCompare {
     class Program {
         static void Main(string[] args) {
             var soapUrl = $"http://{Environment.MachineName}:{1155}";
-            var soapBaseAddress = new Uri(soapUrl);
-            var soapHost = new ServiceHost(typeof(Gate), soapBaseAddress);
-            soapHost.Open();
-
             var restUrl = $"http://{Environment.MachineName}:{1156}";
-            var restBaseAddress = new Uri(restUrl);
-            var restHost = new WebServiceHost(typeof(Gate), restBaseAddress);
-            restHost.Open();
+            var ogamUrl = Environment.MachineName;
 
-            OTcpServer.Log = null;
-            var srv = new OTcpServer(1157);
-            var impl = new Gate();
-            srv.RegisterImplementation(impl);
+            if (args.Any()) {
+                var host = args.First();
+                soapUrl = $"http://{host}:{1155}";
+                restUrl = $"http://{host}:{1156}";
+                ogamUrl = host;
+            } else {
+                var soapBaseAddress = new Uri(soapUrl);
+                var soapHost = new ServiceHost(typeof(Gate), soapBaseAddress);
+                soapHost.Open();
 
-            Thread.Sleep(3000);
+                
+                var restBaseAddress = new Uri(restUrl);
+                var restHost = new WebServiceHost(typeof(Gate), restBaseAddress);
+                restHost.Open();
+
+                OTcpServer.Log = null;
+                var srv = new OTcpServer(1157);
+                var impl = new Gate();
+                srv.RegisterImplementation(impl);
+
+                Thread.Sleep(3000);
+            }
 
             var dto = Dto.GetObject();
 
-            var pc = new OTcpClient(Environment.MachineName, 1157).CreateProxy<IGate>();
+            var pc = new OTcpClient(ogamUrl, 1157).CreateProxy<IGate>();
 
             SoapCall(dto, soapUrl);
             RestCall(dto, restUrl);
             O3Call(dto, pc);
 
-            var cnt = 300000;
+            var cnt = 5000;
 
             Console.Write($"Soap cnt = {cnt} elapsed = ");
             MultiCall(cnt, () => {
@@ -57,7 +68,7 @@ namespace PerformanceNetCompare {
             MultiCall(cnt, () => {
                 O3Call(dto, pc);
             });
-            
+          
 
             Console.ReadLine();
         }

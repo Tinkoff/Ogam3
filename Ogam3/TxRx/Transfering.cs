@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using Amib.Threading;
 using Ogam3.Utils;
 using Action = System.Action;
 
@@ -72,6 +71,7 @@ namespace Ogam3.TxRx {
                     }
 
                     if (isTranferDead) {
+                        FreeBazukaPool();
                         return; // kill current thread
                     }
 
@@ -123,20 +123,25 @@ namespace Ogam3.TxRx {
             StartListener(_receiveStream, (rap, data) => {
                 Action<byte[]> receiveAct = null;
                 if (_synchronizer.TryGetValue(rap, out receiveAct)) {
-                    receiveResponcePool.QueueWorkItem(() => {
+                    _respBazuka.Shot(() => {
                         receiveAct(data);
                     });
                 }
                 else {
-                    receiveRequestPool.QueueWorkItem(() => {
+                    _reqBazuka.Shot(() => {
                         SendManager(requestHandler(data), rap);
                     });
                 }
             });
         }
 
-        private SmartThreadPool receiveRequestPool = new SmartThreadPool() {MaxThreads = 10000};
-        private SmartThreadPool receiveResponcePool = new SmartThreadPool() {MaxThreads = 10000};
+        private readonly ThreadBazuka _reqBazuka = new ThreadBazuka();
+        private readonly ThreadBazuka _respBazuka = new ThreadBazuka();
+
+        private void FreeBazukaPool() {
+            _reqBazuka.Dispose();
+            _respBazuka.Dispose();
+        }
 
         Thread StartListener(Stream transferChannel, System.Action<ulong, byte[]> receiveDataSet) {
             var listenThrd = new Thread(() => { // Listener thread
@@ -207,6 +212,7 @@ namespace Ogam3.TxRx {
         public void Dispose() {
             _sendStream?.Dispose();
             _receiveStream?.Dispose();
+            FreeBazukaPool();
             ConnectionStabilised = null;
             ConnectionError = null;
             isTranferDead = true;

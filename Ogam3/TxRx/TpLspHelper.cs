@@ -137,24 +137,11 @@ namespace Ogam3.TxRx {
         }
 
         static byte[] Compress(byte[] data) {
-            using (var compressedStream = new MemoryStream()) {
-                using (var zipStream = new LZ4Stream(compressedStream, CompressionMode.Compress)) {
-                    zipStream.Write(data, 0, data.Length);
-                    zipStream.Close();
-                    return compressedStream.ToArray();
-                }
-            }
+            return LZ4Codec.WrapHC(data, 0, data.Length);
         }
 
         static byte[] Decompress(byte[] data) {
-            using (var compressedStream = new MemoryStream(data)) {
-                using (var zipStream = new LZ4Stream(compressedStream, CompressionMode.Decompress)) {
-                    using (var resultStream = new MemoryStream()) {
-                        zipStream.CopyTo(resultStream);
-                        return resultStream.ToArray();
-                    }
-                }
-            }
+            return LZ4Codec.Unwrap(data);
         }
 
         public static IEnumerable<TpLspS> SequenceReader(Stream stream) {
