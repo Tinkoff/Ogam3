@@ -178,12 +178,6 @@ namespace Ogam3.Lsp {
                 return true;
         }
 
-        struct CallFrame {
-            public Operation x;
-            public EnviromentFrame e;
-            public List<object> r;
-        }
-
         class Closure {
             public Symbol[] Argument;
             public Operation Body;

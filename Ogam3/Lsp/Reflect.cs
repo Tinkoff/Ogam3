@@ -40,7 +40,7 @@ namespace Ogam3.Lsp {
                 if (!string.IsNullOrWhiteSpace(textIndex)) {
                     try {
                         obj = (obj as IList)[Convert.ToInt32(textIndex)];
-                    } catch (Exception e) {
+                    } catch (Exception) {
                         obj = null;
                     }
                 }
@@ -102,7 +102,7 @@ namespace Ogam3.Lsp {
                         return false;
 
                     (obj as IList)[Convert.ToInt32(textIndex)] = value;
-                } catch (Exception e) {
+                } catch (Exception) {
                     return false;
                 }
             }

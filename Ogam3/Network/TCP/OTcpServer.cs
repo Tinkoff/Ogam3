@@ -120,8 +120,8 @@ namespace Ogam3.Network.Tcp {
         }
 
         public class ReClient : ISomeClient {
-            private Transfering _transfering;
-            private Evaluator _evaluator;
+            public readonly Transfering Transfering;
+            public readonly Evaluator Evaluator;
 
             public event Action<Exception> ConnectionError;
 
@@ -129,9 +129,10 @@ namespace Ogam3.Network.Tcp {
                 ConnectionError?.Invoke(ex);
             }
 
-            public ReClient(Transfering transfering, Evaluator _evaluator) {
-                _transfering = transfering;
-                _transfering.ConnectionError += OnConnectionError;
+            public ReClient(Transfering transfering, Evaluator evaluator) {
+                Transfering = transfering;
+	            Evaluator = evaluator;
+	            Transfering.ConnectionError += OnConnectionError;
             }
 
             public T CreateProxy<T>() {
@@ -139,7 +140,7 @@ namespace Ogam3.Network.Tcp {
             }
 
             public object Call(object seq) {
-                var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray())));
+                var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray())));
 
                 return resp?.Car();
             }

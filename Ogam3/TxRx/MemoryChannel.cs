@@ -25,7 +25,6 @@ namespace Ogam3.TxRx {
         private long readPosition;
         private long writePosition;
         private const long MaxCapacity = 1024 * 1024 * 10;
-        private Thread ClearThr;
         private SemaphoreSlim _writeSim;
         private SemaphoreSlim _readSim;
 
@@ -35,9 +34,6 @@ namespace Ogam3.TxRx {
             _readSim = new SemaphoreSlim(1,1);
         }
 
-        ~MemoryChannel() {
-            ClearThr.Abort();
-        }
 
         public override bool CanRead {
             get { return true; }

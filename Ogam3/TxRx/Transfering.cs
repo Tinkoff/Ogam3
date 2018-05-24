@@ -147,9 +147,6 @@ namespace Ogam3.TxRx {
             var listenThrd = new Thread(() => { // Listener thread
                 try { 
                     var pkgBuilder = new Dictionary<uint, DataBuilder>();
-                    var cnt = 1;
-                    var w = new Stopwatch();
-                    w.Start();
                     while (true) {
                         foreach (var tpLspS in TpLspHelper.SequenceReader(transferChannel)) {
                             if (tpLspS.IsQuantizied) {

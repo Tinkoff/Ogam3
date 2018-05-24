@@ -29,11 +29,10 @@ namespace Ogam3.Network.Tcp {
         public int Port;
 
         public TcpClient ClientTcp;
-        private Transfering Transfering;
-        private static int timeout = 60000;
+        private Transfering _transfering;
         public uint BufferSize = 1048576;
         public NetworkStream Stream;
-        private Evaluator Evaluator;
+        private readonly Evaluator _evaluator;
 
         private readonly Synchronizer _connSync = new Synchronizer(true);
         private readonly Synchronizer _sendSync = new Synchronizer(true);
@@ -43,7 +42,7 @@ namespace Ogam3.Network.Tcp {
             Port = port;
 
             if (evaluator == null) {
-                Evaluator = new Evaluator();
+                _evaluator = new Evaluator();
             }
 
             new Thread(() => {
@@ -59,7 +58,7 @@ namespace Ogam3.Network.Tcp {
         }
 
         public void RegisterImplementation(object instanceOfImplementation) {
-            ClassRegistrator.Register(Evaluator.DefaultEnviroment, instanceOfImplementation);
+            ClassRegistrator.Register(_evaluator.DefaultEnviroment, instanceOfImplementation);
         }
 
         private TcpClient ConnectTcp() {
@@ -71,7 +70,7 @@ namespace Ogam3.Network.Tcp {
 
                     break; // connection success
                 }
-                catch (Exception e) {
+                catch (Exception) {
                     ClientTcp?.Close();
                     Thread.Sleep(1000); // sleep reconnection
                 }
@@ -86,15 +85,15 @@ namespace Ogam3.Network.Tcp {
         private void ConnectServer() {
             var ns = new NetStream(ConnectTcp());
 
-            Transfering?.Dispose();
-            Transfering = new Transfering(ns, ns, BufferSize);
+            _transfering?.Dispose();
+            _transfering = new Transfering(ns, ns, BufferSize);
 
-            Transfering.ConnectionStabilised = OnConnectionStabilised;
+            _transfering.ConnectionStabilised = OnConnectionStabilised;
 
-            Transfering.ConnectionError = ex => {
-                lock (Transfering) {
+            _transfering.ConnectionError = ex => {
+                lock (_transfering) {
                     // for single raction
-                    Transfering.ConnectionError = null;
+                    _transfering.ConnectionError = null;
 
                     _sendSync.Lock();
                     Console.WriteLine($"Connection ERROR {ex.Message}");
@@ -104,7 +103,7 @@ namespace Ogam3.Network.Tcp {
                 }
             };
 
-            Transfering.StartReceiver(data => OTcpServer.DataHandler(Evaluator, data));
+            _transfering.StartReceiver(data => OTcpServer.DataHandler(_evaluator, data));
 
             _sendSync.Unlock();
         }
@@ -117,7 +116,7 @@ namespace Ogam3.Network.Tcp {
 
         public object Call(object seq) {
             if (_sendSync.Wait(5000)) {
-                var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray())));
+                var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray())));
 
                 if (resp.Car() is SpecialMessage) {
                     OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);

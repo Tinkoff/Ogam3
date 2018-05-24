@@ -31,7 +31,6 @@ namespace Ogam3.Lsp {
             Arity = arguments.Car() == null ? Arity = 0 : arguments.Count();
 
             Body = body.GetIterator().Select(subExp => (Cons) subExp).ToArray();
-            //Body[Body.Length - 1] = new TailCall(Body[Body.Length - 1]);
         }
 
         public Lambda() {

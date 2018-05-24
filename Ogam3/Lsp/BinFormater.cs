@@ -69,7 +69,6 @@ namespace Ogam3.Lsp {
             var stack = new Stack<Cons>();
             var root = new Cons();
             stack.Push(root);
-            var isQuote = false;
             var isDot = false; // подумать
 
             var set = new Action<object>(o => {
@@ -148,13 +147,7 @@ namespace Ogam3.Lsp {
                         set(DateTime.FromBinary(BitConverter.ToInt64(R(data, 8), 0)));
                         break;
                     case Codes.StreamLong: // TODO
-                        //var length = BitConverter.ToInt32(R(data, 4), 0);
-                        //var ms = new MemoryStream();
-                        //while (length > 0) {
-                            
-                        //}
                         throw new Exception("Not supported");
-                        break;
                     case Codes.SpecialMessage:
                         set(new SpecialMessage(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0)))));
                         break;
@@ -172,12 +165,8 @@ namespace Ogam3.Lsp {
                     }
                         default:
                         throw new Exception("Bad data format!");
-                            return null;
                 }
             }
-
-
-            return root;
         }
 
         private static byte[] R(Stream data, int count) {
@@ -314,15 +303,6 @@ namespace Ogam3.Lsp {
             ms.Write(bytes, 0, bytes.Length);
             return ms;
         }
-
-        //private static MemoryStream MsWrite<T>(MemoryStream ms, T o) where T : struct {
-        //    int size = Marshal.SizeOf(typeof(T));
-        //    var bytes = new byte[size];
-        //    var gcHandle = GCHandle.Alloc(o, GCHandleType.Pinned);
-        //    Marshal.Copy(gcHandle.AddrOfPinnedObject(), bytes, 0, size);
-        //    gcHandle.Free();
-        //    return ms;
-        //}
 
         private static byte[] Foo<T>(this T input) where T : struct {
             int size = Marshal.SizeOf(typeof(T));

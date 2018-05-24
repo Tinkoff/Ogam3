@@ -37,7 +37,15 @@ namespace Ogam3.Lsp {
             return Name == symbol.Name;
         }
 
-        public static bool operator ==(Symbol a, Symbol b) {
+	    protected bool Equals(Symbol other) {
+		    return string.Equals(Name, other.Name);
+	    }
+
+	    public override int GetHashCode() {
+		    return (Name != null ? Name.GetHashCode() : 0);
+	    }
+
+	    public static bool operator ==(Symbol a, Symbol b) {
             if (ReferenceEquals(a, b)) {
                 return true;
             }
