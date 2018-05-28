@@ -6,135 +6,94 @@ using System.Threading;
 
 namespace Ogam3.Utils {
     public class ThreadBazuka : IDisposable{
-        public List<Charge> ChargeHolder;
-        public uint Min = 1;
-        public TimeSpan ChargeLiveTime;
-        public TimeSpan DeadTime;
-        private bool isLive;
+	    public LinkedList<Charge> ChargeHolder = new LinkedList<Charge>();
 
         public ThreadBazuka() {
-            ChargeHolder = new List<Charge>();
-            ChargeLiveTime = TimeSpan.FromMinutes(1);
-            DeadTime = TimeSpan.FromMinutes(10);
-
-            Alive();
         }
 
-        private void InitPull() {
-            PreCreate(Min);
-        }
+	    private int _cnt;
+	    public void Shot(Action action) {
+		    Charge ch = null;
 
-        private void Alive() {
-            if (isLive) return;
-            isLive = true;
+			lock (ChargeHolder) {
+				retry:
+				if (ChargeHolder.Any()) {
+				    ch = ChargeHolder.First.Value;
+					ChargeHolder.RemoveFirst();
 
-            InitPull();
+					if (!ch.IsLive) {
+						ch = null;
+						goto retry;
+					}
 
-            new Thread(() => {
-                while (isLive) {
-                    lock (ChargeHolder) {
-                        var now = DateTime.Now;
-                        if (ChargeHolder.Count > Min) {
-                            var olds = ChargeHolder.Where(c => c.IsLive && c.Work == null && (now - c.LastShot) > ChargeLiveTime).ToArray();
-                            var diff = (ChargeHolder.Count - Min) * 0.3;
-                            var i = 0;
-                            foreach (var charge in olds) {
-                                charge.Kill();
-                                ChargeHolder.Remove(charge);
+				    ch.Shot(action + (() => {
+					    lock (ChargeHolder) {
+						    ChargeHolder.AddFirst(ch);
+					    }
+				    }));
 
-                                if (i++ >= diff) {
-                                    break;
-                                }
-                            }
-                        }
-                        else {
-                            if (ChargeHolder.All(c => (now - c.LastShot) > DeadTime)) {
-                                foreach (var charge in ChargeHolder.ToArray()) {
-                                    charge.Kill();
-                                    ChargeHolder.Remove(charge);
-                                }
-                                isLive = false;
-                                return;
-                            }
-                        }
-                    }
+					return;
+				}
+		    }
 
-                    Thread.Sleep(ChargeLiveTime);
-                }
-            }) {IsBackground = true}.Start();
-        }
+		    ch = new Charge(() => {
+			    lock (ChargeHolder) {
+				    ChargeHolder.Remove(ch);
+			    }
+		    });
 
-        public void Shot(Action action) {
-            lock (ChargeHolder) {
-                var charge = ChargeHolder.FirstOrDefault(c => c.IsLive && c.Work == null);
 
-                if (charge != null) {
-                    charge.Shot(action);
-                    return;
-                }
-            }
+		    ch.Shot(action + (() => {
+			    lock (ChargeHolder) {
+				    ChargeHolder.AddFirst(ch);
+			    }
+		    }));
 
-            var newCharge = new Charge();
-            newCharge.Shot(action + (Alive));
-            lock (ChargeHolder) {
-                ChargeHolder.Add(newCharge);
-            }
-        }
-
-        private void PreCreate(uint count) {
-            var lst = new List<Charge>();
-            for (var i = 0; i < count; i++) {
-                lst.Add(new Charge());
-            }
-
-            lock (ChargeHolder) {
-                ChargeHolder.AddRange(lst);
-            }
-        }
+		    if (_cnt++ > 1000000) {
+			    _cnt = 0;
+			    lock (ChargeHolder) {
+				    foreach (var charge2 in ChargeHolder.ToArray()) {
+					    if (!charge2.IsLive) {
+						    ChargeHolder.Remove(charge2);
+					    }
+				    }
+			    }
+		    }
+	    }
 
         public void Dispose() {
-            isLive = false;
-            lock (ChargeHolder) {
-                foreach (var charge in ChargeHolder.ToArray()) {
-                    charge.Kill();
-                    ChargeHolder.Remove(charge);
-                }
-            }
         }
     }
 
-    public class Charge {
-        public Synchronizer Sync;
-        public Action Work;
-        public DateTime LastShot;
-        public bool IsLive;
+	public class Charge {
+		public Synchronizer Sync;
+		public Action Work;
+		public bool IsLive;
+		public Charge(Action removeFromPull) {
+			Sync = new Synchronizer();
+			Sync.Lock();
+			IsLive = true;
 
-        public Charge() {
-            LastShot = DateTime.Now;
-            IsLive = true;
-            Sync = new Synchronizer();
-            Sync.Lock();
+			new Thread(() => {
+				while (true) {
+					Work?.Invoke();
+					Sync.Lock();
+					Work = null;
+					if (!Sync.Wait(TimeSpan.FromMinutes(7))) {
+						IsLive = false;
+						Work?.Invoke();
+						removeFromPull();
+						Sync.Dispose();
+						return;
+					}
+				}
+			}) { IsBackground = true }.Start();
 
-            new Thread(() => {
-                while (IsLive) {
-                    Work?.Invoke();
-                    Sync.Lock();
-                    Work = null;
-                    Sync.Wait(TimeSpan.FromMinutes(1));
-                }
-            }) {IsBackground = true}.Start();
-            
-        }
+		}
 
-        public void Kill() {
-            IsLive = false;
-            Sync.Unlock();
-        }
-
-        public void Shot(Action work) {
-            LastShot = DateTime.Now;
-            Work = work;
-            Sync.Unlock();
-        }
-    }
+		public void Shot(Action work) {
+			Work = work;
+			Sync.Unlock();
+		}
+	}
 }

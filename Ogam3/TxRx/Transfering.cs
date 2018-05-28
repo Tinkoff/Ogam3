@@ -71,7 +71,6 @@ namespace Ogam3.TxRx {
                     }
 
                     if (isTranferDead) {
-                        FreeBazukaPool();
                         return; // kill current thread
                     }
 
@@ -95,8 +94,11 @@ namespace Ogam3.TxRx {
 
             SendManager(data, rap);
 
-            sync.Wait();
-            Action<byte[]> res;
+	        if (!sync.Wait(TimeSpan.FromMinutes(15))) { // timeout 
+		        return new byte[0];
+	        }
+
+	        Action<byte[]> res;
             _synchronizer.TryRemove(rap, out res);
             return result;
         }
@@ -123,25 +125,19 @@ namespace Ogam3.TxRx {
             StartListener(_receiveStream, (rap, data) => {
                 Action<byte[]> receiveAct = null;
                 if (_synchronizer.TryGetValue(rap, out receiveAct)) {
-                    _respBazuka.Shot(() => {
-                        receiveAct(data);
+	                JobBazuka.Shot(() => {
+						receiveAct(data);
                     });
                 }
                 else {
-                    _reqBazuka.Shot(() => {
-                        SendManager(requestHandler(data), rap);
+	                JobBazuka.Shot(() => {
+						SendManager(requestHandler(data), rap);
                     });
                 }
             });
         }
 
-        private readonly ThreadBazuka _reqBazuka = new ThreadBazuka();
-        private readonly ThreadBazuka _respBazuka = new ThreadBazuka();
-
-        private void FreeBazukaPool() {
-            _reqBazuka.Dispose();
-            _respBazuka.Dispose();
-        }
+	    private static readonly ThreadBazuka JobBazuka = new ThreadBazuka();
 
         Thread StartListener(Stream transferChannel, System.Action<ulong, byte[]> receiveDataSet) {
             var listenThrd = new Thread(() => { // Listener thread
@@ -209,7 +205,6 @@ namespace Ogam3.TxRx {
         public void Dispose() {
             _sendStream?.Dispose();
             _receiveStream?.Dispose();
-            FreeBazukaPool();
             ConnectionStabilised = null;
             ConnectionError = null;
             isTranferDead = true;
