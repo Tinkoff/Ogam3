@@ -89,7 +89,7 @@ cli.SpecialMessageEvt += (message, o) => {
 };    
      
 //Create transfer interface    
-var pc = cli.CreateInterfase<IServerSide>();    
+var pc = cli.CreateProxy<IServerSide>();    
      
 //Call server    
 Console.WriteLine($"pc.IntSumm(11, 33) = {pc.IntSumm(11, 33)}");    
