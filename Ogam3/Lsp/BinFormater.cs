@@ -25,11 +25,14 @@ namespace Ogam3.Lsp {
     public static class BinFormater {
 
         private struct Codes {
-            public const byte Open = (byte)'(';
-            public const byte Close = (byte)')';
-            public const byte Dot = (byte)'.';
-            public const byte Integer16 = (byte)'i';
-            public const byte Integer32 = (byte)'I';
+            public const byte Open = 0x01;
+            public const byte Close = 0x02;
+            public const byte Dot = 0x03;
+            public const byte Integer16_16 = 0x0a;
+            public const byte Integer16_8 = 0x0b;
+            public const byte Integer16_8_Negate = 0x0c;
+            public const byte Integer16_0 = 0x0d;
+            public const byte Integer32_32 = (byte)'I';
             public const byte Integer64 = (byte)'l';
             public const byte Byte = (byte)'b';
             public const byte Bool = (byte)'B';
@@ -64,6 +67,9 @@ namespace Ogam3.Lsp {
                 || t == typeof(DateTime)
                 || t == typeof(SpecialMessage);
         }
+
+        private static byte[] X1 = new byte[] {0x00};
+        private static byte[] XN1 = new byte[] { 0xFF };
 
         public static Cons Read(MemoryStream data) {
             var stack = new Stack<Cons>();
@@ -100,10 +106,19 @@ namespace Ogam3.Lsp {
                         isDot = true;
                         break;
                         //FIXED SIZE
-                    case Codes.Integer16:
+                    case Codes.Integer16_16:
                         set(BitConverter.ToInt16(R(data, 2), 0));
                         break;
-                    case Codes.Integer32:
+                    case Codes.Integer16_8:
+                        set(BitConverter.ToInt16(R(data, 1, X1), 0));
+                        break;
+                    case Codes.Integer16_8_Negate:
+                        set(BitConverter.ToInt16(R(data, 1, XN1), 0));
+                        break;
+                    case Codes.Integer16_0:
+                        set((short)0);
+                        break;
+                    case Codes.Integer32_32:
                         set(BitConverter.ToInt32(R(data, 4), 0));
                         break;
                     case Codes.Integer64:
@@ -169,8 +184,16 @@ namespace Ogam3.Lsp {
             }
         }
 
-        private static byte[] R(Stream data, int count) {
-            var buffer = new byte[count];
+        private static byte[] R(Stream data, int count, byte[] trailer = null) {
+            byte[] buffer;
+            if (trailer == null) {
+                buffer = new byte[count];
+            }
+            else {
+                buffer = new byte[count + trailer.Length];
+                Array.Copy(trailer, 0, buffer, count, trailer.Length);
+            }
+
             var res = data.Read(buffer, 0, count);
 
             return res != count ? null : buffer;
@@ -210,10 +233,10 @@ namespace Ogam3.Lsp {
             if (item is Cons) {
                 WriteConsSeq(ms, item as Cons);
             } else if (item is int) {
-                writeCode(Codes.Integer32);
+                writeCode(Codes.Integer32_32);
                 MsWrite(ms, BitConverter.GetBytes((int)item));
             } else if (item is uint) {
-                writeCode(Codes.Integer32);
+                writeCode(Codes.Integer32_32);
                 MsWrite(ms, BitConverter.GetBytes((uint)item));
             } else if (item is long) {
                 writeCode(Codes.Integer64);
@@ -222,10 +245,17 @@ namespace Ogam3.Lsp {
                 writeCode(Codes.Integer64);
                 MsWrite(ms, BitConverter.GetBytes((ulong)item));
             } else if (item is short) {
-                writeCode(Codes.Integer16);
-                MsWrite(ms, BitConverter.GetBytes((short)item));
+                var val = (short) item;
+                if ((val <= 255) && (val >= -255)) {
+                    writeCode(val > 0 ? Codes.Integer16_8 : Codes.Integer16_8_Negate);
+                    MsWrite(ms, BitConverter.GetBytes(val).Take(1).ToArray());
+                }
+                else {
+                    writeCode(Codes.Integer16_16);
+                    MsWrite(ms, BitConverter.GetBytes(val));
+                }
             } else if (item is ushort) {
-                writeCode(Codes.Integer16);
+                writeCode(Codes.Integer16_16);
                 MsWrite(ms, BitConverter.GetBytes((ushort)item));
             } else if (item is float) {
                 writeCode(Codes.Float32);
