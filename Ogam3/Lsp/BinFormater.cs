@@ -68,7 +68,17 @@ namespace Ogam3.Lsp {
             public const byte Integer64_16_Negate = 0x2a;
             public const byte Integer64_8 = 0x2b;
             public const byte Integer64_8_Negate = 0x2c;
-            public const byte Integer64_0 = 0x2e;
+            public const byte Integer64_0 = 0x2d;
+
+            public const byte Integer64_64_u = 0x2e;
+            public const byte Integer64_56_u = 0x2f;
+            public const byte Integer64_48_u = 0x30;
+            public const byte Integer64_40_u = 0x31;
+            public const byte Integer64_32_u = 0x32;
+            public const byte Integer64_24_u = 0x33;
+            public const byte Integer64_16_u = 0x34;
+            public const byte Integer64_8_u = 0x35;
+            public const byte Integer64_0_u = 0x36;
 
 
             public const byte Byte = (byte)'b';
@@ -264,6 +274,33 @@ namespace Ogam3.Lsp {
                     case Codes.Integer64_0:
                         set(0L);
                         break;
+                    case Codes.Integer64_64_u:
+                        set(BitConverter.ToUInt64(R(data, 8), 0));
+                        break;
+                    case Codes.Integer64_56_u:
+                        set(BitConverter.ToUInt64(R(data, 7, X1), 0));
+                        break;
+                    case Codes.Integer64_48_u:
+                        set(BitConverter.ToUInt64(R(data, 6, X2), 0));
+                        break;
+                    case Codes.Integer64_40_u:
+                        set(BitConverter.ToUInt64(R(data, 5, X3), 0));
+                        break;
+                    case Codes.Integer64_32_u:
+                        set(BitConverter.ToUInt64(R(data, 4, X4), 0));
+                        break;
+                    case Codes.Integer64_24_u:
+                        set(BitConverter.ToUInt64(R(data, 3, X5), 0));
+                        break;
+                    case Codes.Integer64_16_u:
+                        set(BitConverter.ToUInt64(R(data, 2, X6), 0));
+                        break;
+                    case Codes.Integer64_8_u:
+                        set(BitConverter.ToUInt64(R(data, 1, X7), 0));
+                        break;
+                    case Codes.Integer64_0_u:
+                        set(0UL);
+                        break;
                     case Codes.Byte:
                         set(data.ReadByte());
                         break;
@@ -436,8 +473,34 @@ namespace Ogam3.Lsp {
                     MsWrite(ms, BitConverter.GetBytes(val));
                 }
             } else if (item is ulong) {
-                writeCode(Codes.Integer64_64);
-                MsWrite(ms, BitConverter.GetBytes((ulong)item));
+                var val = (ulong)item;
+                if (val == 0) {
+                    writeCode(Codes.Integer64_0_u);
+                } else if ((val <= 255)) {
+                    writeCode(Codes.Integer64_8_u);
+                    MsWrite(ms, BitConverter.GetBytes(val).Take(1).ToArray());
+                } else if ((val <= 65535)) {
+                    writeCode(Codes.Integer64_16_u);
+                    MsWrite(ms, BitConverter.GetBytes(val).Take(2).ToArray());
+                } else if ((val <= 16777215)) {
+                    writeCode(Codes.Integer64_24_u);
+                    MsWrite(ms, BitConverter.GetBytes(val).Take(3).ToArray());
+                } else if ((val <= 4294967295)) {
+                    writeCode(Codes.Integer64_32_u);
+                    MsWrite(ms, BitConverter.GetBytes(val).Take(4).ToArray());
+                } else if ((val <= 1099511627775)) {
+                    writeCode(Codes.Integer64_40_u);
+                    MsWrite(ms, BitConverter.GetBytes(val).Take(5).ToArray());
+                } else if ((val <= 281474976710655)) {
+                    writeCode(Codes.Integer64_48_u);
+                    MsWrite(ms, BitConverter.GetBytes(val).Take(6).ToArray());
+                } else if ((val <= 72057594037927935)) {
+                    writeCode(Codes.Integer64_56_u);
+                    MsWrite(ms, BitConverter.GetBytes(val).Take(7).ToArray());
+                } else {
+                    writeCode(Codes.Integer64_64_u);
+                    MsWrite(ms, BitConverter.GetBytes(val));
+                }
             } else if (item is short) {
                 var val = (short)item;
                 if (val == 0) {
