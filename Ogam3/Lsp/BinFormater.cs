@@ -84,10 +84,10 @@ namespace Ogam3.Lsp {
             public const byte Byte = 0x37;
             public const byte BoolTrue = 0x38;
             public const byte BoolFalse = 0x39;
-            public const byte Charter8 = (byte)'c';
-            public const byte Charter32 = (byte)'C';
-            public const byte Float32 = (byte)'f';
-            public const byte Float64 = (byte)'F';
+            public const byte Charter8 = 0x3a;
+            public const byte Charter32 = 0x3b;
+            public const byte Float32 = 0x3c;
+            public const byte Float64 = 0x3d;
             public const byte SymbolShort = (byte)'s';
             public const byte SymbolLong = (byte)'S';
             public const byte String = (byte)'t';
