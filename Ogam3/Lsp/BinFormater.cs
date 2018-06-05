@@ -81,8 +81,9 @@ namespace Ogam3.Lsp {
             public const byte Integer64_0_u = 0x36;
 
 
-            public const byte Byte = (byte)'b';
-            public const byte Bool = (byte)'B';
+            public const byte Byte = 0x37;
+            public const byte BoolTrue = 0x38;
+            public const byte BoolFalse = 0x39;
             public const byte Charter8 = (byte)'c';
             public const byte Charter32 = (byte)'C';
             public const byte Float32 = (byte)'f';
@@ -304,8 +305,11 @@ namespace Ogam3.Lsp {
                     case Codes.Byte:
                         set(data.ReadByte());
                         break;
-                    case Codes.Bool:
-                        set(data.ReadByte() != 0);
+                    case Codes.BoolTrue:
+                        set(true);
+                        break;
+                    case Codes.BoolFalse:
+                        set(false);
                         break;
                     case Codes.Charter8:
                         set((char)data.ReadByte());
@@ -533,8 +537,7 @@ namespace Ogam3.Lsp {
                 writeCode(Codes.Byte);
                 ms.WriteByte((byte)item);
             } else if (item is bool) {
-                writeCode(Codes.Bool);
-                ms.WriteByte((byte)((bool)item ? 1 : 0));
+                writeCode((bool)item ? Codes.BoolTrue : Codes.BoolFalse);
             } else if (item == null) {
                 writeCode(Codes.Null);
             } else if (item is DateTime) {
