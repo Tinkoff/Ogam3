@@ -26,16 +26,16 @@ namespace Ogam3.TxRx {
     class TpLspHelper {
         private static byte[] Coding(byte[] data) {
             //return Escape(Compress(data));
-            return Compress(data);
+            //return Compress(data);
             //return Escape(data);
-            //return data;
+            return data;
         }
 
         private static byte[] unCoding(byte[] data) {
             //return Decompress(UnEscape(data));
-            return Decompress(data);
+            //return Decompress(data);
             //return UnEscape(data);
-            //return data;
+            return data;
         }
 
         public static void SendData(byte[] data, Stream channel, uint quantSize, ulong rap) {

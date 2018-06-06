@@ -24,6 +24,22 @@ using Ogam3.Network.Tcp;
 namespace TcpClient {
     class Program {
         static void Main(string[] args) {
+            //var ii = BitConverter.ToInt16(new byte[] {0xFF, 0x00}, 0);
+
+            //var x = BinFormater.Read(new MemoryStream(new byte[] {0x0d})).Car();
+
+            Symbol v = new Symbol("test");
+
+            var st = new SymbolTable(new []{"test"});
+
+            var bb = BinFormater.Write(v, st);
+            var vv = bb.ToArray();
+            var xx = BinFormater.Read(bb, st).Car();
+
+            if ((Symbol) xx != v) {
+                throw new Exception();
+            }
+
             // Create connection
             var cli = new OTcpClient("localhost", 1010);
             // Register client interface implementation

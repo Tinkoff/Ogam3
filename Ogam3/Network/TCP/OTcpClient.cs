@@ -20,6 +20,7 @@ using System.Net.Sockets;
 using System.Threading;
 using Ogam3.Lsp;
 using Ogam3.Lsp.Generators;
+using Ogam3.Network.TCP;
 using Ogam3.TxRx;
 using Ogam3.Utils;
 
@@ -37,6 +38,10 @@ namespace Ogam3.Network.Tcp {
         private readonly Synchronizer _connSync = new Synchronizer(true);
         private readonly Synchronizer _sendSync = new Synchronizer(true);
 
+        //private string[] _serverIndexedSymbols = new string[0];
+        private readonly IQueryInterface _serverQueryInterfaceProxy;
+        private SymbolTable _symbolTable;
+
         public OTcpClient(string host, int port, Evaluator evaluator = null) {
             Host = host;
             Port = port;
@@ -44,6 +49,8 @@ namespace Ogam3.Network.Tcp {
             if (evaluator == null) {
                 _evaluator = new Evaluator();
             }
+
+            _serverQueryInterfaceProxy = CreateProxy<IQueryInterface>();
 
             new Thread(() => {
                 while (true) {
@@ -88,7 +95,10 @@ namespace Ogam3.Network.Tcp {
             _transfering?.Dispose();
             _transfering = new Transfering(ns, ns, BufferSize);
 
-            _transfering.ConnectionStabilised = OnConnectionStabilised;
+            _transfering.ConnectionStabilised = OnConnectionStabilised + new Action(() => {
+                //_serverIndexedSymbols = _serverQueryInterfaceProxy.GetIndexedSymbols();
+                _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
+            });
 
             _transfering.ConnectionError = ex => {
                 lock (_transfering) {
@@ -103,7 +113,7 @@ namespace Ogam3.Network.Tcp {
                 }
             };
 
-            _transfering.StartReceiver(data => OTcpServer.DataHandler(_evaluator, data));
+            _transfering.StartReceiver(data => OTcpServer.DataHandler(_evaluator, data, _symbolTable));
 
             _sendSync.Unlock();
         }
@@ -116,7 +126,7 @@ namespace Ogam3.Network.Tcp {
 
         public object Call(object seq) {
             if (_sendSync.Wait(5000)) {
-                var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq).ToArray())));
+                var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq, _symbolTable).ToArray())), _symbolTable);
 
                 if (resp.Car() is SpecialMessage) {
                     OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);

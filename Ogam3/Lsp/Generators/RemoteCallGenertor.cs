@@ -126,7 +126,7 @@ namespace Ogam3.Lsp.Generators {
                 var retType = interfaceMethodInfo.ReturnType;
 
                 Func<string, bool> isEmpty = string.IsNullOrWhiteSpace;
-                var defineName = isEmpty(envAtt.EnviromentName)
+                var defineName = isEmpty(envAtt?.EnviromentName)
                     ? interfaceMethodInfo.Name
                     : $"{envAtt.EnviromentName}:{interfaceMethodInfo.Name}";
 

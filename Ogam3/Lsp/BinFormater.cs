@@ -88,8 +88,11 @@ namespace Ogam3.Lsp {
             public const byte Charter32 = 0x3b;
             public const byte Float32 = 0x3c;
             public const byte Float64 = 0x3d;
-            public const byte SymbolShort = (byte)'s';
-            public const byte SymbolLong = (byte)'S';
+            public const byte SymbolShort = 0x3e;
+            public const byte SymbolLong = 0x3f;
+
+            public const byte SymbolIndex = 0x40;
+
             public const byte String = (byte)'t';
             public const byte StreamShort = (byte)'r';
             public const byte StreamLong = (byte)'R';
@@ -132,7 +135,7 @@ namespace Ogam3.Lsp {
         private static byte[] XN6 = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
         private static byte[] XN7 = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
-        public static Cons Read(MemoryStream data) {
+        public static Cons Read(MemoryStream data, SymbolTable symbolTable) {
             var stack = new Stack<Cons>();
             var root = new Cons();
             stack.Push(root);
@@ -330,6 +333,9 @@ namespace Ogam3.Lsp {
                     case Codes.SymbolLong:
                         set(new Symbol(Encoding.UTF8.GetString(R(data, BitConverter.ToInt16(R(data, 2), 0)))));
                         break;
+                    case Codes.SymbolIndex:
+                        set(new Symbol(symbolTable?.Get(BitConverter.ToUInt16(R(data, 2), 0))));
+                        break;
                     case Codes.String:
                         set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0))));
                         break;
@@ -380,27 +386,27 @@ namespace Ogam3.Lsp {
             return res != count ? null : buffer;
         }
 
-        public static MemoryStream Write(object tree) {
+        public static MemoryStream Write(object tree, SymbolTable symbolTable) {
             var ms = new MemoryStream();
 
-            WriteItem(ms, tree);
+            WriteItem(ms, tree, symbolTable);
 
             ms.Seek(0, SeekOrigin.Begin);
             return ms;
         }
 
-        private static MemoryStream WriteConsSeq(MemoryStream ms, Cons tree) {
+        private static MemoryStream WriteConsSeq(MemoryStream ms, Cons tree, SymbolTable symbolTable) {
             ms.WriteByte(Codes.Open);
 
             foreach (var o in tree.GetIterator()) {
-                WriteItem(ms, o.Car());
+                WriteItem(ms, o.Car(), symbolTable);
 
                 var cdr = o.Cdr();
 
                 if (cdr is Cons || (cdr == null)) continue;
 
                 ms.WriteByte(Codes.Dot);
-                WriteItem(ms, cdr);
+                WriteItem(ms, cdr, symbolTable);
             }
 
             ms.WriteByte(Codes.Close);
@@ -408,11 +414,11 @@ namespace Ogam3.Lsp {
             return ms;
         }
 
-        private static MemoryStream WriteItem(MemoryStream ms, object item) {
+        private static MemoryStream WriteItem(MemoryStream ms, object item, SymbolTable symbolTable) {
             var writeCode = new Action<byte>(ms.WriteByte);
 
             if (item is Cons) {
-                WriteConsSeq(ms, item as Cons);
+                WriteConsSeq(ms, item as Cons, symbolTable);
             } else if (item is int) {
                 var val = (int)item;
                 if (val == 0) {
@@ -553,18 +559,26 @@ namespace Ogam3.Lsp {
                     MsWrite(ms, Encoding.UTF32.GetBytes(new []{(char) item}));
                 }
             } else if (item is Symbol) {
-                var bytes = Encoding.UTF8.GetBytes((item as Symbol).Name);
+                var name = (item as Symbol).Name;
 
-                if (bytes.Length <= 255) {
-                    writeCode(Codes.SymbolShort);
-                    ms.WriteByte((byte)bytes.Length);
+                var index = symbolTable?.Get(name);
+
+                if (index.HasValue) {
+                    writeCode(Codes.SymbolIndex);
+                    MsWrite(ms, BitConverter.GetBytes((ushort)index.Value));
                 }
                 else {
-                    writeCode(Codes.SymbolLong);
-                    MsWrite(ms, BitConverter.GetBytes((short)bytes.Length));
+                    var bytes = Encoding.UTF8.GetBytes(name);
+                    if (bytes.Length <= 255) {
+                        writeCode(Codes.SymbolShort);
+                        ms.WriteByte((byte) bytes.Length);
+                    }
+                    else {
+                        writeCode(Codes.SymbolLong);
+                        MsWrite(ms, BitConverter.GetBytes((short) bytes.Length));
+                    }
+                    MsWrite(ms, bytes);
                 }
-
-                MsWrite(ms, bytes);
             } else if (item is string) {
                 var bytes = Encoding.UTF8.GetBytes((item as string));
                 writeCode(Codes.String);
@@ -610,6 +624,43 @@ namespace Ogam3.Lsp {
             Marshal.Copy(gcHandle.AddrOfPinnedObject(), result, 0, size);
             gcHandle.Free();
             return result;
+        }
+    }
+
+    public class SymbolTable {
+        private readonly Dictionary<string, ushort> _indexer;
+        private readonly List<string> _symbols;
+
+        public SymbolTable() {
+            _indexer = new Dictionary<string, ushort>();
+            _symbols = new List<string>();
+        }
+
+        public SymbolTable(string[] symbols) {
+            _indexer = new Dictionary<string, ushort>();
+            _symbols = new List<string>();
+
+            foreach (var symbol in symbols) {
+                _indexer[symbol] = (ushort)_symbols.Count;
+                _symbols.Add(symbol);
+            }
+        }
+
+        public ushort? Get(string symbolname) {
+            if (_indexer.ContainsKey(symbolname)) {
+                return _indexer[symbolname];
+            }
+
+            return null;
+        }
+
+        public string Get(ushort index) {
+            if (index < _symbols.Count) {
+                var tmp = _symbols[index];
+                return _symbols[index];
+            }
+
+            return null;
         }
     }
 }

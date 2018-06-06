@@ -26,9 +26,8 @@ using Ogam3.Serialization;
 
 namespace Ogam3.Lsp.Generators {
     class ClassRegistrator {
-        public static void Register(EnviromentFrame env, object instanceOfImplementation) {
-            const BindingFlags methodFlags =
-                BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
+        public static string[] Register(EnviromentFrame env, object instanceOfImplementation) {
+            const BindingFlags methodFlags = BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
             var type = instanceOfImplementation.GetType();
 
             var descriptors = new List<MethodDescriptors>();
@@ -91,6 +90,56 @@ namespace Ogam3.Lsp.Generators {
 
                 Activator.CreateInstance(callerType, instanceOfImplementation, env);
             }
+
+            return GetAllNames(descriptors.ToArray());
+        }
+
+        static string[] GetAllNames(MethodDescriptors[] descriptors) {
+            var symbols = new List<string>();
+            symbols.AddRange(descriptors.Select(d => d.DefineName));
+
+            var types = descriptors.Select(d => IsNullable(d.ReturnType) ? Nullable.GetUnderlyingType(d.ReturnType) : d.ReturnType).Where(t => !(BinFormater.IsPrimitive(t) || t == typeof(void))).ToList();
+            types.AddRange(descriptors.SelectMany(d => d.Arguments.Select(p => IsNullable(p.ParameterType) ? Nullable.GetUnderlyingType(p.ParameterType) : p.ParameterType)).Where(t => !(BinFormater.IsPrimitive(t) || t == typeof(void))));
+            types = types.Distinct().ToList();
+
+            var stack = new Stack<Type>();
+            foreach (var tt in types) {
+                stack.Push(tt);
+            }
+
+            var checkedTypes = new List<Type>();
+
+            while (stack.Any()) {
+                var t = stack.Pop();
+                var internalTypes = new List<Type>();
+                foreach (var fi in t.GetFields()) {
+                    symbols.Add(fi.Name);
+                    internalTypes.Add(fi.FieldType);
+                }
+
+                foreach (var pt in t.GetProperties()) {
+                    symbols.Add(pt.Name);
+                    internalTypes.Add(pt.PropertyType);
+                }
+
+                foreach (var type in internalTypes.ToArray()) {
+                    if (type.IsGenericType) {
+                        internalTypes.AddRange(type.GetGenericArguments());
+                    }
+                }
+
+                foreach (var internalType in internalTypes) {
+                    var it = IsNullable(internalType) ? Nullable.GetUnderlyingType(internalType) : internalType;
+                    if (!checkedTypes.Contains(it)) {
+                        if (!(BinFormater.IsPrimitive(it) || it == typeof(void))) {
+                            checkedTypes.Add(it);
+                            stack.Push(it);
+                        }
+                    }
+                }
+            }
+
+            return symbols.Distinct().ToArray();
         }
 
         static IEnumerable<string> GetAssemblyFiles(Assembly assembly) {

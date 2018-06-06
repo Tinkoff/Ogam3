@@ -15,13 +15,16 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using Ogam3.Lsp;
 using Ogam3.Lsp.Generators;
+using Ogam3.Network.TCP;
 using Ogam3.TxRx;
 
 namespace Ogam3.Network.Tcp {
@@ -33,8 +36,15 @@ namespace Ogam3.Network.Tcp {
 
         public static Action<string> Log = Console.WriteLine;
 
+        private readonly QueryInterface _queryInterface;
+
         public OTcpServer(int port, Evaluator evaluator = null) {
             Evaluator = evaluator ?? new Evaluator();
+
+            _queryInterface = new QueryInterface();
+            _queryInterface.UpsertIndexedSymbols(new []{"quote", "lambda" , "if", "begin", "define", "set!", "call/cc", });
+            _queryInterface.UpsertIndexedSymbols(Evaluator.DefaultEnviroment.Variables.Keys.ToArray());
+            RegisterImplementation(_queryInterface);
 
             _listener = new TcpListener(IPAddress.Any, port);
             _listener.Start();
@@ -47,7 +57,8 @@ namespace Ogam3.Network.Tcp {
         }
 
         public void RegisterImplementation(object instanceOfImplementation) {
-            ClassRegistrator.Register(Evaluator.DefaultEnviroment, instanceOfImplementation);
+            var symbols = ClassRegistrator.Register(Evaluator.DefaultEnviroment, instanceOfImplementation);
+            _queryInterface.UpsertIndexedSymbols(symbols);
         }
 
         private void ListenerHandler(object o) {
@@ -73,8 +84,8 @@ namespace Ogam3.Network.Tcp {
             Thread.SetData(Thread.GetNamedDataSlot(id), obj);
         }
 
-        public static byte[] DataHandler(Evaluator evl, byte[] data) {
-            var receive = BinFormater.Read(new MemoryStream(data));
+        public static byte[] DataHandler(Evaluator evl, byte[] data, SymbolTable symbolTable) {
+            var receive = BinFormater.Read(new MemoryStream(data), symbolTable);
 
             try {
                 var transactLog = new StringBuilder();
@@ -86,7 +97,7 @@ namespace Ogam3.Network.Tcp {
                 Log?.Invoke(transactLog.ToString().Trim());
 
                 if (res != null) {
-                    return BinFormater.Write(res).ToArray();
+                    return BinFormater.Write(res, symbolTable).ToArray();
                 } else {
                     return new byte[0];
                 }
@@ -98,7 +109,7 @@ namespace Ogam3.Network.Tcp {
                     ex = ex.InnerException;
                 }
                 Log?.Invoke(sb.ToString());
-                return BinFormater.Write(new SpecialMessage(sb.ToString())).ToArray();
+                return BinFormater.Write(new SpecialMessage(sb.ToString()), symbolTable).ToArray();
             }
         }
 
@@ -113,9 +124,9 @@ namespace Ogam3.Network.Tcp {
 
             server.StartReceiver(data => {
                 SetContextObj(ContextTcpClientId, client); // TODO single set
-                SetContextObj(ReClientId, new ReClient(server, Evaluator)); // TODO single set
+                SetContextObj(ReClientId, new ReClient(server, Evaluator, _queryInterface)); // TODO single set
 
-                return DataHandler(Evaluator, data);
+                return DataHandler(Evaluator, data, _queryInterface.GetSymbolTable());
             });
         }
 
@@ -125,14 +136,17 @@ namespace Ogam3.Network.Tcp {
 
             public event Action<Exception> ConnectionError;
 
+            private QueryInterface _queryInterface;
+
             protected virtual void OnConnectionError(Exception ex) {
                 ConnectionError?.Invoke(ex);
             }
 
-            public ReClient(Transfering transfering, Evaluator evaluator) {
+            public ReClient(Transfering transfering, Evaluator evaluator, QueryInterface queryInterface) {
                 Transfering = transfering;
 	            Evaluator = evaluator;
 	            Transfering.ConnectionError += OnConnectionError;
+                _queryInterface = queryInterface;
             }
 
             public T CreateProxy<T>() {
@@ -140,7 +154,7 @@ namespace Ogam3.Network.Tcp {
             }
 
             public object Call(object seq) {
-                var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq).ToArray())));
+                var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq, _queryInterface.GetSymbolTable()).ToArray())), _queryInterface.GetSymbolTable());
 
                 return resp?.Car();
             }
