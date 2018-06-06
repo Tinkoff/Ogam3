@@ -565,20 +565,19 @@ namespace Ogam3.Lsp {
 
                 if (index.HasValue) {
                     writeCode(Codes.SymbolIndex);
-                    MsWrite(ms, BitConverter.GetBytes((ushort)index.Value));
-                }
-                else {
+                    MsWrite(ms, BitConverter.GetBytes(index.Value));
+                } else {
                     var bytes = Encoding.UTF8.GetBytes(name);
                     if (bytes.Length <= 255) {
                         writeCode(Codes.SymbolShort);
-                        ms.WriteByte((byte) bytes.Length);
-                    }
-                    else {
+                        ms.WriteByte((byte)bytes.Length);
+                    } else {
                         writeCode(Codes.SymbolLong);
-                        MsWrite(ms, BitConverter.GetBytes((short) bytes.Length));
+                        MsWrite(ms, BitConverter.GetBytes((short)bytes.Length));
                     }
                     MsWrite(ms, bytes);
                 }
+
             } else if (item is string) {
                 var bytes = Encoding.UTF8.GetBytes((item as string));
                 writeCode(Codes.String);
@@ -647,16 +646,15 @@ namespace Ogam3.Lsp {
         }
 
         public ushort? Get(string symbolname) {
-            if (_indexer.ContainsKey(symbolname)) {
-                return _indexer[symbolname];
-            }
+            ushort res = 0;
+            if (_indexer.TryGetValue(symbolname, out res))
+                return res;
 
             return null;
         }
 
         public string Get(ushort index) {
             if (index < _symbols.Count) {
-                var tmp = _symbols[index];
                 return _symbols[index];
             }
 
