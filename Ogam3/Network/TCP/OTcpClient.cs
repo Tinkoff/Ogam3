@@ -38,7 +38,6 @@ namespace Ogam3.Network.Tcp {
         private readonly Synchronizer _connSync = new Synchronizer(true);
         private readonly Synchronizer _sendSync = new Synchronizer(true);
 
-        //private string[] _serverIndexedSymbols = new string[0];
         private readonly IQueryInterface _serverQueryInterfaceProxy;
         private SymbolTable _symbolTable;
 
@@ -58,6 +57,9 @@ namespace Ogam3.Network.Tcp {
                     _connSync.Wait();
                 }
             }) {IsBackground = true}.Start();
+
+            // enqueue sybmbol table call
+            _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
         }
 
         public T CreateProxy<T>() {
@@ -95,9 +97,15 @@ namespace Ogam3.Network.Tcp {
             _transfering?.Dispose();
             _transfering = new Transfering(ns, ns, BufferSize);
 
+            var isReconnected = false;
+
             _transfering.ConnectionStabilised = OnConnectionStabilised + new Action(() => {
-                //_serverIndexedSymbols = _serverQueryInterfaceProxy.GetIndexedSymbols();
-                _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
+                if (isReconnected) {
+                    _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
+                }
+                else {
+                    isReconnected = true;
+                }
             });
 
             _transfering.ConnectionError = ex => {

@@ -334,7 +334,14 @@ namespace Ogam3.Lsp {
                         set(new Symbol(Encoding.UTF8.GetString(R(data, BitConverter.ToInt16(R(data, 2), 0)))));
                         break;
                     case Codes.SymbolIndex:
-                        set(new Symbol(symbolTable?.Get(BitConverter.ToUInt16(R(data, 2), 0))));
+                        if (symbolTable != null) {
+                            set(new Symbol(symbolTable.Get(BitConverter.ToUInt16(R(data, 2), 0))));
+                        }
+                        else {
+                            R(data, 2);
+                            set(new Symbol("<undefined-symbol-index>"));
+                        }
+
                         break;
                     case Codes.String:
                         set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0))));
@@ -353,19 +360,7 @@ namespace Ogam3.Lsp {
                     case Codes.SpecialMessage:
                         set(new SpecialMessage(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0)))));
                         break;
-                    case 'Q': {
-                        var nod = new Cons(new Symbol("quote"));
-                        stack.Peek().Add(nod);
-                        stack.Push(nod);
-                        break;
-                    }
-                    case 'V': {
-                        var nod = new Cons(new Symbol("vector"));
-                        stack.Peek().Add(nod);
-                        stack.Push(nod);
-                        break;
-                    }
-                        default:
+                    default:
                         throw new Exception("Bad data format!");
                 }
             }
@@ -639,9 +634,16 @@ namespace Ogam3.Lsp {
             _indexer = new Dictionary<string, ushort>();
             _symbols = new List<string>();
 
+            if (symbols == null) {
+                return;
+            }
+
             foreach (var symbol in symbols) {
-                _indexer[symbol] = (ushort)_symbols.Count;
-                _symbols.Add(symbol);
+                var len = (ushort)_symbols.Count;
+                if (len > 1) {
+                    _indexer[symbol] = len;
+                    _symbols.Add(symbol);
+                }
             }
         }
 
