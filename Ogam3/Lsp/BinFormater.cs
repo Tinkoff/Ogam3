@@ -25,50 +25,50 @@ namespace Ogam3.Lsp {
     public static class BinFormater {
 
         private struct Codes {
-            public const byte Open = 0x01;
+            public const byte Open  = 0x01;
             public const byte Close = 0x02;
-            public const byte Dot = 0x03;
+            public const byte Dot   = 0x03;
 
-            public const byte Integer16_16 = 0x0a;
-            public const byte Integer16_8 = 0x0b;
+            public const byte Integer16_16       = 0x0a;
+            public const byte Integer16_8        = 0x0b;
             public const byte Integer16_8_Negate = 0x0c;
-            public const byte Integer16_0 = 0x0d;
+            public const byte Integer16_0        = 0x0d;
 
             public const byte Integer16_16_u = 0x0e;
-            public const byte Integer16_8_u = 0x0f;
-            public const byte Integer16_0_u = 0x10;
+            public const byte Integer16_8_u  = 0x0f;
+            public const byte Integer16_0_u  = 0x10;
 
-            public const byte Integer32_32 = 0x11;
-            public const byte Integer32_24 = 0x12;
+            public const byte Integer32_32        = 0x11;
+            public const byte Integer32_24        = 0x12;
             public const byte Integer32_24_Negate = 0x13;
-            public const byte Integer32_16 = 0x14;
+            public const byte Integer32_16        = 0x14;
             public const byte Integer32_16_Negate = 0x15;
-            public const byte Integer32_8 = 0x16;
-            public const byte Integer32_8_Negate = 0x17;
-            public const byte Integer32_0 = 0x18;
+            public const byte Integer32_8         = 0x16;
+            public const byte Integer32_8_Negate  = 0x17;
+            public const byte Integer32_0         = 0x18;
 
             public const byte Integer32_32_u = 0x19;
             public const byte Integer32_24_u = 0x1a;
             public const byte Integer32_16_u = 0x1b;
-            public const byte Integer32_8_u = 0x1c;
-            public const byte Integer32_0_u = 0x1d;
+            public const byte Integer32_8_u  = 0x1c;
+            public const byte Integer32_0_u  = 0x1d;
 
-            public const byte Integer64_64 = 0x1e;
-            public const byte Integer64_56 = 0x1f;
+            public const byte Integer64_64        = 0x1e;
+            public const byte Integer64_56        = 0x1f;
             public const byte Integer64_56_Negate = 0x20;
-            public const byte Integer64_48 = 0x21;
+            public const byte Integer64_48        = 0x21;
             public const byte Integer64_48_Negate = 0x22;
-            public const byte Integer64_40 = 0x23;
+            public const byte Integer64_40        = 0x23;
             public const byte Integer64_40_Negate = 0x24;
-            public const byte Integer64_32 = 0x25;
+            public const byte Integer64_32        = 0x25;
             public const byte Integer64_32_Negate = 0x26;
-            public const byte Integer64_24 = 0x27;
+            public const byte Integer64_24        = 0x27;
             public const byte Integer64_24_Negate = 0x28;
-            public const byte Integer64_16 = 0x29;
+            public const byte Integer64_16        = 0x29;
             public const byte Integer64_16_Negate = 0x2a;
-            public const byte Integer64_8 = 0x2b;
-            public const byte Integer64_8_Negate = 0x2c;
-            public const byte Integer64_0 = 0x2d;
+            public const byte Integer64_8         = 0x2b;
+            public const byte Integer64_8_Negate  = 0x2c;
+            public const byte Integer64_0         = 0x2d;
 
             public const byte Integer64_64_u = 0x2e;
             public const byte Integer64_56_u = 0x2f;
@@ -77,28 +77,40 @@ namespace Ogam3.Lsp {
             public const byte Integer64_32_u = 0x32;
             public const byte Integer64_24_u = 0x33;
             public const byte Integer64_16_u = 0x34;
-            public const byte Integer64_8_u = 0x35;
-            public const byte Integer64_0_u = 0x36;
+            public const byte Integer64_8_u  = 0x35;
+            public const byte Integer64_0_u  = 0x36;
 
 
             public const byte Byte = 0x37;
-            public const byte BoolTrue = 0x38;
+
+            public const byte BoolTrue  = 0x38;
             public const byte BoolFalse = 0x39;
-            public const byte Charter8 = 0x3a;
+
+            public const byte Charter8  = 0x3a;
             public const byte Charter32 = 0x3b;
+
             public const byte Float32 = 0x3c;
             public const byte Float64 = 0x3d;
+
             public const byte SymbolShort = 0x3e;
-            public const byte SymbolLong = 0x3f;
+            public const byte SymbolLong  = 0x3f;
 
             public const byte SymbolIndex = 0x40;
 
-            public const byte String = (byte)'t';
-            public const byte StreamShort = (byte)'r';
-            public const byte StreamLong = (byte)'R';
-            public const byte Null = (byte)'n';
-            public const byte DateTime = (byte)'d';
-            public const byte SpecialMessage = (byte)'e';
+            public const byte String32_32 = 0x41;
+            public const byte String32_24 = 0x42;
+            public const byte String32_16 = 0x43;
+            public const byte String32_8 = 0x44;
+            public const byte String32_0 = 0x45;
+
+            public const byte StreamShort = 0x46;
+            public const byte StreamLong  = 0x47;
+
+            public const byte Null = 0x48;
+
+            public const byte DateTime = 0x49;
+
+            public const byte SpecialMessage = 0x4a;
         }
 
         public static bool IsPrimitive(Type t) {
@@ -343,8 +355,20 @@ namespace Ogam3.Lsp {
                         }
 
                         break;
-                    case Codes.String:
+                    case Codes.String32_32:
                         set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0))));
+                        break;
+                    case Codes.String32_24:
+                        set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 3, X1), 0))));
+                        break;
+                    case Codes.String32_16:
+                        set(Encoding.UTF8.GetString(R(data, BitConverter.ToUInt16(R(data, 2), 0))));
+                        break;
+                    case Codes.String32_8:
+                        set(Encoding.UTF8.GetString(R(data, data.ReadByte())));
+                        break;
+                    case Codes.String32_0:
+                        set("");
                         break;
                     case Codes.StreamShort:
                         set(new MemoryStream(R(data, BitConverter.ToInt32(R(data, 4), 0))));
@@ -575,8 +599,22 @@ namespace Ogam3.Lsp {
 
             } else if (item is string) {
                 var bytes = Encoding.UTF8.GetBytes((item as string));
-                writeCode(Codes.String);
-                MsWrite(ms, BitConverter.GetBytes((int)bytes.Length));
+
+                if (bytes.Length == 0) {
+                    writeCode(Codes.String32_0);
+                } else if ((bytes.Length <= 255)) {
+                    writeCode(Codes.String32_8);
+                    MsWrite(ms, BitConverter.GetBytes((int)bytes.Length).Take(1).ToArray());
+                } else if ((bytes.Length <= 65535)) {
+                    writeCode(Codes.String32_16);
+                    MsWrite(ms, BitConverter.GetBytes((int)bytes.Length).Take(2).ToArray());
+                } else if ((bytes.Length <= 16777215)) {
+                    writeCode(Codes.String32_24);
+                    MsWrite(ms, BitConverter.GetBytes((int)bytes.Length).Take(3).ToArray());
+                } else {
+                    writeCode(Codes.String32_32);
+                    MsWrite(ms, BitConverter.GetBytes((int)bytes.Length));
+                }
                 MsWrite(ms, bytes);
             } else if (item is MemoryStream) {
                 var bytes = ReadFully(item as Stream);
