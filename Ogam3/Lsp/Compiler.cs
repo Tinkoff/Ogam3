@@ -34,7 +34,6 @@ namespace Ogam3.Lsp {
         }
 
         public static Operation Compile(object exp, Operation next) {
-
             if (exp is Symbol) {
                 return Operation.Refer(exp as Symbol, next);
             }
