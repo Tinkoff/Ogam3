@@ -19,20 +19,35 @@ using System.Threading;
 
 namespace Ogam3.Utils {
     public class Synchronizer : IDisposable{
-        private object _locker;
+        private readonly object _locker;
         private bool _isLocked;
+        private readonly object _lockerProp;
+
+        private bool IsLockedSafe {
+            get {
+                lock (_lockerProp) {
+                    return _isLocked;
+                }
+            }
+            set {
+                lock (_lockerProp) {
+                    _isLocked = value;
+                }
+            }
+        }
 
         public Synchronizer(bool isLocked = false) {
             _locker = new object();
-            _isLocked = isLocked;
+            _lockerProp = new object();
+            IsLockedSafe = isLocked;
         }
 
         public void Lock() {
-            _isLocked = true;
+            IsLockedSafe = true;
         }
 
         public void Unlock() {
-            _isLocked = false;
+            IsLockedSafe = false;
             Pulse();
         }
 
@@ -43,9 +58,11 @@ namespace Ogam3.Utils {
         }
 
         public bool Wait() {
-            if (_isLocked) {
+            if (IsLockedSafe) {
                 lock (_locker) {
-                    return Monitor.Wait(_locker);
+                    if (IsLockedSafe) {
+                        return Monitor.Wait(_locker);
+                    }
                 }
             }
 
@@ -53,9 +70,11 @@ namespace Ogam3.Utils {
         }
 
         public bool Wait(int millisecondsTimeout) {
-            if (_isLocked) {
+            if (IsLockedSafe) {
                 lock (_locker) {
-                    return Monitor.Wait(_locker, millisecondsTimeout);
+                    if (IsLockedSafe) {
+                        return Monitor.Wait(_locker, millisecondsTimeout);
+                    }
                 }
             }
 
@@ -63,9 +82,11 @@ namespace Ogam3.Utils {
         }
 
         public bool Wait(TimeSpan timeout) {
-            if (_isLocked) {
+            if (IsLockedSafe) {
                 lock (_locker) {
-                    return Monitor.Wait(_locker, timeout);
+                    if (IsLockedSafe) {
+                        return Monitor.Wait(_locker, timeout);
+                    }
                 }
             }
 
