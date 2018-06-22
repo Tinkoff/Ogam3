@@ -67,6 +67,9 @@
     <Compile Include="Network\TCP\OTcpServer.cs" />
     <Compile Include="Network\TCP\QueryInterface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serialization\DataBase\MorpherDb.cs" />
+    <Compile Include="Serialization\DataBase\ItemDb.cs" />
+    <Compile Include="Utils\SGuid.cs" />
     <Compile Include="Utils\LogTextWriter.cs" />
     <Compile Include="Utils\StringExtension.cs" />
     <Compile Include="Utils\Synchronizer.cs" />
