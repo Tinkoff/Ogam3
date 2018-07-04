@@ -61,6 +61,9 @@
     <Compile Include="Lsp\Symbol.cs" />
     <Compile Include="Lsp\VM.cs" />
     <Compile Include="Network\ISomeClient.cs" />
+    <Compile Include="Network\Pipe\OPipeClient.cs" />
+    <Compile Include="Network\Pipe\OPipeServer.cs" />
+    <Compile Include="Network\Pipe\PipeTransferStream.cs" />
     <Compile Include="Network\TCP\IQueryInterface.cs" />
     <Compile Include="Network\TCP\NetStream.cs" />
     <Compile Include="Network\TCP\OTcpClient.cs" />
