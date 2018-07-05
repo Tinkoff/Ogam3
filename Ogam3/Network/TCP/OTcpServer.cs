@@ -85,9 +85,9 @@ namespace Ogam3.Network.Tcp {
         }
 
         public static byte[] DataHandler(Evaluator evl, byte[] data, SymbolTable symbolTable) {
-            var receive = BinFormater.Read(new MemoryStream(data), symbolTable);
-
             try {
+                var receive = BinFormater.Read(new MemoryStream(data), symbolTable);
+
                 var transactLog = new StringBuilder();
                 transactLog.AppendLine($"<< {receive}");
 
