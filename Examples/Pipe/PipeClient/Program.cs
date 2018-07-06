@@ -14,7 +14,7 @@ using Ogam3.Network.Pipe;
 namespace PipeClient {
     class Program {
         static void Main(string[] args) {
-            var cli = new OPipeClient("");
+            var cli = new OPipeClient("test-pipe");
 
             cli.RegisterImplementation(new ClientLogigImplementation());
 

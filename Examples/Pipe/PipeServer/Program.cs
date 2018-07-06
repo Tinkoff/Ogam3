@@ -14,7 +14,7 @@ using Ogam3.Network.Tcp;
 namespace PipeServer {
     class Program {
         static void Main(string[] args) {
-            var srv = new OPipeServer("");
+            var srv = new OPipeServer("test-pipe");
 
             var impl = new ServerLogicImplementation();
             // Register server implementation

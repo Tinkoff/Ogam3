@@ -21,7 +21,10 @@ namespace Ogam3.Network.Pipe {
 
         private readonly QueryInterface _queryInterface;
 
+        private string _pipeName;
+
         public OPipeServer(string pipeName, Evaluator evaluator = null) {
+            _pipeName = pipeName;
             Evaluator = evaluator ?? new Evaluator();
 
             _queryInterface = new QueryInterface();
@@ -41,7 +44,7 @@ namespace Ogam3.Network.Pipe {
 
         private void ListenerHandler(object o) {
             while (true) {
-                var server = new PipeServer("testpipe");
+                var server = new PipeServer(_pipeName);
                 server.WaitConnection();
                 ClientConnection(server);
             }
@@ -76,9 +79,9 @@ namespace Ogam3.Network.Pipe {
         }
 
         public static byte[] DataHandler(Evaluator evl, byte[] data, SymbolTable symbolTable) {
-            var receive = BinFormater.Read(new MemoryStream(data), symbolTable);
-
             try {
+                var receive = BinFormater.Read(new MemoryStream(data), symbolTable);
+
                 var transactLog = new StringBuilder();
                 transactLog.AppendLine($"<< {receive}");
 
@@ -108,17 +111,23 @@ namespace Ogam3.Network.Pipe {
     public class PipeServer : IDisposable{
         private NamedPipeServerStream ReceivePipe;
         private NamedPipeClientStream SendPipe;
-        public PipeTransferStream ReceiveStream => new PipeTransferStream(ReceivePipe);
-        public PipeTransferStream SendStream => new PipeTransferStream(SendPipe);
+        public PipeTransferStream ReceiveStream => new PipeTransferStream(ReceivePipe, Dispose);
+        public PipeTransferStream SendStream => new PipeTransferStream(SendPipe, Dispose);
+
+        private const string ServerPref = "server-";
+        private const string ClientPref = "client-";
 
         public PipeServer(string pipeName) {
-            ReceivePipe = new NamedPipeServerStream(pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances);
-            SendPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
+            ReceivePipe = new NamedPipeServerStream(ServerPref + pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances);
+            SendPipe = new NamedPipeClientStream(".", ClientPref + pipeName, PipeDirection.Out);
         }
 
+        private object _locker = new object();
         public bool WaitConnection() {
-            ReceivePipe.WaitForConnection();
-            SendPipe.Connect();
+            lock (_locker) {
+                ReceivePipe.WaitForConnection();
+                SendPipe.Connect();
+            }
 
             return true;
         }

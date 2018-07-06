@@ -8,9 +8,11 @@ using System.Text;
 namespace Ogam3.Network.Pipe {
     public class PipeTransferStream : Stream {
         private PipeStream _pipeStream { get; }
+        private Action _dispiseCallback;
 
-        public PipeTransferStream(PipeStream pipe) {
+        public PipeTransferStream(PipeStream pipe, Action disposeCallback) {
             _pipeStream = pipe;
+            _dispiseCallback = disposeCallback;
         }
         public override void Flush() {
             _pipeStream.Flush();
@@ -25,11 +27,29 @@ namespace Ogam3.Network.Pipe {
         }
 
         public override int Read(byte[] buffer, int offset, int count) {
-            return _pipeStream.Read(buffer, offset, count);
+            try {
+                ThrowIfClose();
+                return _pipeStream.Read(buffer, offset, count);
+            } catch (Exception e) {
+                _dispiseCallback?.Invoke();
+                throw e;
+            }
+        }
+
+        private void ThrowIfClose() {
+            if (!_pipeStream.IsConnected) {
+                throw new Exception("Connection was closed");
+            }
         }
 
         public override void Write(byte[] buffer, int offset, int count) {
-            _pipeStream.Write(buffer, offset, count);
+            try {
+                ThrowIfClose();
+                _pipeStream.Write(buffer, offset, count);
+            } catch (Exception e) {
+                _dispiseCallback?.Invoke();
+                throw e;
+            }
         }
         public override bool CanRead {
             get { return true; }

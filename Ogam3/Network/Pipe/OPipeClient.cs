@@ -31,7 +31,10 @@ namespace Ogam3.Network.Pipe {
 
         private Transfering _transfering;
 
+        private string _pipeName;
+
         public OPipeClient(string pipeName, Action connectionStabilised = null, Evaluator evaluator = null) {
+            _pipeName = pipeName;
             ConnectionStabilised = connectionStabilised;
 
             if (evaluator == null) {
@@ -75,7 +78,7 @@ namespace Ogam3.Network.Pipe {
             while (true) {
                 try {
                     pipeClient?.Dispose();
-                    pipeClient = new PipeClient("testpipe");
+                    pipeClient = new PipeClient(_pipeName);
                     pipeClient.Connect();
 
                     break; // connection success
@@ -146,17 +149,24 @@ namespace Ogam3.Network.Pipe {
     public class PipeClient : IDisposable {
         private NamedPipeServerStream ReceivePipe;
         private NamedPipeClientStream SendPipe;
-        public PipeTransferStream ReceiveStream => new PipeTransferStream(ReceivePipe);
-        public PipeTransferStream SendStream => new PipeTransferStream(SendPipe);
+        public PipeTransferStream ReceiveStream => new PipeTransferStream(ReceivePipe, Dispose);
+        public PipeTransferStream SendStream => new PipeTransferStream(SendPipe, Dispose);
+
+        private const string ServerPref = "server-";
+        private const string ClientPref = "client-";
+
+        private object _locker = new object();
 
         public PipeClient(string pipeName) {
-            ReceivePipe = new NamedPipeServerStream(pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances);
-            SendPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
+            ReceivePipe = new NamedPipeServerStream(ClientPref + pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances);
+            SendPipe = new NamedPipeClientStream(".", ServerPref + pipeName, PipeDirection.Out);
         }
 
         public bool Connect() {
-            SendPipe.Connect();
-            ReceivePipe.WaitForConnection();
+            lock (_locker) {
+                SendPipe.Connect();
+                ReceivePipe.WaitForConnection();
+            }
 
             return true;
         }
