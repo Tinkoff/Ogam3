@@ -41,9 +41,10 @@ namespace Ogam3.Network.Tcp {
         private readonly IQueryInterface _serverQueryInterfaceProxy;
         private SymbolTable _symbolTable;
 
-        public OTcpClient(string host, int port, Evaluator evaluator = null) {
+        public OTcpClient(string host, int port, Action connectionStabilised = null,  Evaluator evaluator = null) {
             Host = host;
             Port = port;
+            ConnectionStabilised = connectionStabilised;
 
             if (evaluator == null) {
                 _evaluator = new Evaluator();
