@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Ogam3.Lsp;
 
-namespace Ogam3.Serialization.DataBase {
+namespace Ogam3.Serialization.ODataBase {
     public class MorpherDb {
         public static List<ItemDb> Sequence(object node, string objectId) {
             var lst = new List<ItemDb>();
