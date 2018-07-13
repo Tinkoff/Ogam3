@@ -18,9 +18,9 @@ namespace Ogam3.Serialization.ODataBase {
 
         public ValueDb(object value) {
             Id = SGuid.GetSSGuid();
-            Value = value;
-
             _typeSwitch.TryGetValue(value.GetType(), out ValueType);
+
+            Value = value is Symbol ? value.ToString() : value;
         }
 
         private static Dictionary<Type, ValueTypeE> _typeSwitch = new Dictionary<Type, ValueTypeE>() {
