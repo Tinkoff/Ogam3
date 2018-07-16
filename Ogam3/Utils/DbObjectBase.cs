@@ -60,7 +60,9 @@ namespace Ogam3.Utils {
                 case ValueDb.ValueTypeE.UInt32:
                     return (UInt32)reader.GetInt64(ordinal);
                 case ValueDb.ValueTypeE.Int64:
-                    return reader.GetInt32(ordinal);
+                    return reader.GetInt64(ordinal);
+                case ValueDb.ValueTypeE.UInt64:
+                    return (UInt64)reader.GetInt64(ordinal);
                 case ValueDb.ValueTypeE.Float32:
                     return reader.GetFloat(ordinal);
                 case ValueDb.ValueTypeE.Float64:
@@ -69,6 +71,8 @@ namespace Ogam3.Utils {
                     return reader.GetValue(ordinal).ToString();
                 case ValueDb.ValueTypeE.Symbol:
                     return new Symbol(reader.GetString(ordinal));
+                case ValueDb.ValueTypeE.Boolean:
+                    return reader.GetInt32(ordinal) != 0;
                 case ValueDb.ValueTypeE.DateTime:
                     return reader.GetDateTime(ordinal);
                 case ValueDb.ValueTypeE.Byte:
