@@ -77,7 +77,10 @@ namespace Ogam3.Lsp {
             }
         }
 
-        
+        public static StringPack SPack(string str) {
+            return new StringPack(str);
+        }
+
         public static Cons Exp(params object[] items) {
             return List(items.Select<object,object>(i => {
                 if (i is string) {
@@ -86,6 +89,10 @@ namespace Ogam3.Lsp {
                         return s.Remove(0, 2);
                     }
                     return new Symbol(s);
+                }
+
+                if (i is StringPack) {
+                    return i.ToString();
                 }
 
                 return i;
