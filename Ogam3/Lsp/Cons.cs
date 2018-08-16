@@ -77,6 +77,21 @@ namespace Ogam3.Lsp {
             }
         }
 
+        
+        public static Cons Exp(params object[] items) {
+            return List(items.Select<object,object>(i => {
+                if (i is string) {
+                    var s = i as string;
+                    if (s.StartsWith("$$")) {
+                        return s.Remove(0, 2);
+                    }
+                    return new Symbol(s);
+                }
+
+                return i;
+            }).ToArray());
+        }
+
         public static Cons List(params object[] items) {
             var root = new Cons();
 
