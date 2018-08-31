@@ -164,10 +164,10 @@ namespace Ogam3.Network.Tcp {
 
         public void Dispose() {
             _isReconnectEnabled = false;
-            _transfering.Dispose();
-            _sendSync.Dispose();
-            _connSync.Dispose();
-            ClientTcp.Close();
+            _transfering?.Dispose();
+            _sendSync?.Dispose();
+            _connSync?.Dispose();
+            ClientTcp?.Close();
         }
     }
 }
