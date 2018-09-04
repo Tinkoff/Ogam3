@@ -24,7 +24,6 @@ using Ogam3.Utils;
 namespace TestEvaluator {
     class Program {
         static void Main(string[] args) { // TODO
-            //var rr = "(+ (- 5))".O3Eval();
             //var rr = "(defmacro (if2 c t f) (if c t f))".O3Eval();
             //rr = "(if2 #t (display 11) (display 22))".O3Eval();
             //"(defmacro (a body) body )".O3Eval();
