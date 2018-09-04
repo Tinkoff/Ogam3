@@ -47,6 +47,7 @@ namespace Ogam3.Network.Pipe {
                 while (true) {
                     ConnectPipeServer();
                     _connSync.Wait();
+                    Thread.Sleep(3000); // Wait when OS close pipe if a pipe server was closed
                 }
             }) { IsBackground = true }.Start();
 
@@ -80,9 +81,9 @@ namespace Ogam3.Network.Pipe {
                     pipeClient?.Dispose();
                     pipeClient = new PipeClient(_pipeName);
                     pipeClient.Connect();
-
                     break; // connection success
-                } catch (Exception) {
+                } catch (Exception e) {
+                    Console.WriteLine(e.Message);
                     pipeClient?.Dispose();
                     Thread.Sleep(1000); // sleep reconnection
                 }
@@ -158,14 +159,30 @@ namespace Ogam3.Network.Pipe {
         private object _locker = new object();
 
         public PipeClient(string pipeName) {
-            ReceivePipe = new NamedPipeServerStream(ClientPref + pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances);
+            ReceivePipe = new NamedPipeServerStream(ClientPref + pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
             SendPipe = new NamedPipeClientStream(".", ServerPref + pipeName, PipeDirection.Out);
         }
 
         public bool Connect() {
             lock (_locker) {
                 SendPipe.Connect();
-                ReceivePipe.WaitForConnection();
+                var sync = new Synchronizer(true);
+                ReceivePipe.BeginWaitForConnection(ar => {
+                    try {
+                        ReceivePipe.EndWaitForConnection(ar);
+                        sync.Unlock();
+                    } catch (Exception e) {
+                        Console.WriteLine(e);
+                    }
+                }, null);
+
+                if (!sync.Wait(7000)) {
+                    SendPipe.Close();
+                    ReceivePipe.Close();
+                    throw new Exception("ReceivePipe timeout");
+                }
+
+                //ReceivePipe.WaitForConnection(); does not work very well
             }
 
             return true;
