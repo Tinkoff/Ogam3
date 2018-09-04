@@ -121,7 +121,10 @@ namespace Ogam3.Lsp.Generators {
             //var envAtt = (EnviromentAttribute) serverInterface.GetCustomAttribute(typeof(EnviromentAttribute));
             var envAtt = (EnviromentAttribute) serverInterface.GetCustomAttributes(typeof(EnviromentAttribute), true).FirstOrDefault();
 
-            foreach (var interfaceMethodInfo in serverInterface.GetMethods(methodFlags)) {
+            var methodInfos = GetMethodInfos(serverInterface, methodFlags);
+
+            //foreach (var interfaceMethodInfo in serverInterface.GetMethods(methodFlags)) {
+            foreach (var interfaceMethodInfo in methodInfos) {
                 var funcArgs = interfaceMethodInfo.GetParameters().ToArray();
                 var retType = interfaceMethodInfo.ReturnType;
 
@@ -136,6 +139,34 @@ namespace Ogam3.Lsp.Generators {
             codeNamespace.Types.Add(targetClass);
 
             return codeRoot;
+        }
+
+        private static MethodInfo[] GetMethodInfos(Type serverInterface, BindingFlags bindingFlags) {
+            List<MethodInfo> methodInfos = new List<MethodInfo>();
+
+            MethodInfo[] tempMethodInfos = serverInterface.GetMethods(bindingFlags);
+            methodInfos.AddRange(tempMethodInfos);
+
+            IEnumerable<Type> inheritedTypes = GetInheritedTypes(serverInterface);
+            foreach (var inheritedType in inheritedTypes) {
+                tempMethodInfos = inheritedType.GetMethods(bindingFlags);
+                methodInfos.AddRange(tempMethodInfos);
+            }
+
+            return methodInfos.ToArray();
+        }
+
+        private static Type[] GetInheritedTypes(Type t) {
+            List<Type> res = new List<Type>();
+
+            var interfaces = t.GetInterfaces();
+            if (interfaces != null)
+                res.AddRange(interfaces);
+
+            foreach (var i in interfaces)
+                GetInheritedTypes(i);
+
+            return res.ToArray();
         }
 
         static CodeMemberField AddField(string name, Type type) {

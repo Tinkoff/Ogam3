@@ -48,6 +48,10 @@ namespace Ogam3 {
             O3Extend(name, Evaluator, call);
         }
 
+        public static StringPack O3Pack(this string str) {
+            return new StringPack(str);
+        }
+
         public static void O3Extend(this string name, Evaluator evaluator, dynamic call) {
             name = name.Trim();
 
@@ -58,6 +62,18 @@ namespace Ogam3 {
             lock (evaluator) {
                 evaluator.DefaultEnviroment.Define(name, call);
             }
+        }
+    }
+
+    public class StringPack {
+        public string Str;
+
+        public StringPack(string str) {
+            Str = str;
+        }
+
+        public override string ToString() {
+            return Str;
         }
     }
 }

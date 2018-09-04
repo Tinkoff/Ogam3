@@ -292,7 +292,7 @@ namespace Ogam3.Lsp.Generators {
             const string nameOfEnvArg = "env";
 
             constructor.Parameters.Add(new CodeParameterDeclarationExpression(implementationType, nameOfImplArg));
-            constructor.Parameters.Add(new CodeParameterDeclarationExpression(typeof(IEnviromentFrame), nameOfEnvArg));
+            constructor.Parameters.Add(new CodeParameterDeclarationExpression(typeof(IEnviromentFrame<dynamic>), nameOfEnvArg));
 
             var tcpClientReference =
                 new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), NameOfImplementationField);
@@ -309,7 +309,7 @@ namespace Ogam3.Lsp.Generators {
                     new CodeThisReferenceExpression(), new CodePrimitiveExpression(desc.MethodName));
                 var createDefine = new CodeMethodInvokeExpression(
                     new CodeMethodReferenceExpression(new CodeArgumentReferenceExpression(nameOfEnvArg),
-                        nameof(IEnviromentFrame.Define)), new CodePrimitiveExpression(desc.DefineName),
+                        nameof(IEnviromentFrame<dynamic>.Define)), new CodePrimitiveExpression(desc.DefineName),
                     createInvokableDlg);
 
                 constructor.Statements.Add(createDefine);

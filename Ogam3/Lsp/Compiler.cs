@@ -15,7 +15,9 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Ogam3.Lsp {
     public class Compiler {
@@ -23,7 +25,79 @@ namespace Ogam3.Lsp {
             return Compile(Reader.Read(str));
         }
 
+        public static EnviromentFrame<Macro> macro = new EnviromentFrame<Macro>();
+
+        public static Cons MExpand(Cons seq) { // TODO
+            var rseq = new Cons();
+            foreach (var o in seq.GetIterator()) {
+                var exp = o.Car();
+
+                if (exp is Cons) {
+                    var op = exp.Car() as Symbol;
+                    var arguments = exp.Cdr() as Cons;
+
+                    if (op?.Name == "defmacro") {
+                        var mName = arguments?.Car().Car() as Symbol;
+                        var mArg = arguments?.Car().Cdr() as Cons;
+                        var mBody = arguments?.Cdr() as Cons;
+                        macro.Define(mName, new Macro(mArg, mBody));
+                        continue;
+                        
+                    }
+                    else if(macro.Lookup(op)) {
+                        foreach (var o1 in (macro.Get(op).Expand(arguments)).GetIterator()) {
+                            rseq.Add(o1.Car());
+                        }
+
+                        continue;
+                    }
+                }
+
+                rseq.Add(exp);
+            }
+            return rseq;
+        }
+
+        public class Macro { // TODO
+            public Symbol[] Args;
+            public Cons Body;
+
+            public Macro(Cons args, Cons body) {
+                Args = args.GetIterator().Select(i => i.Car() as Symbol).ToArray();
+                Body = body;
+            }
+
+            public Cons Expand(Cons values) {
+                var vls = values.GetIterator().ToArray();
+                var dic = new Dictionary<string, object>();
+
+                for (int i = 0; i < Args.Length; i++) {
+                    dic[Args[i].Name] = vls[i].Car();
+                }
+
+                return Replacer(Body, dic);
+            }
+
+            private Cons Replacer(Cons seq, Dictionary<string, object> vals) {
+                var rSeq = new Cons();
+                foreach (var o in seq.GetIterator()) {
+                    var itm = o.Car();
+                    if (itm is Cons) {
+                        itm = Replacer(itm as Cons, vals);
+                    } else if (itm is Symbol) {
+                        if (vals.ContainsKey((itm as Symbol).Name)) {
+                            itm = vals[(itm as Symbol).Name];
+                        }
+                    }
+
+                    rSeq.Add(itm);
+                }
+                return rSeq;
+            }
+        }
+
         public static Operation Compile(Cons seq) {
+            //return CompileBegin(MExpand(seq), Operation.Halt());
             return CompileBegin(seq, Operation.Halt());
         }
 

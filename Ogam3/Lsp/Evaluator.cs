@@ -32,6 +32,10 @@ namespace Ogam3.Lsp {
             return EvlSeq(seq, DefaultEnviroment);
         }
 
+        public object EvlExp(Cons seq) {
+            return EvlSeq(new Cons(seq), DefaultEnviroment);
+        }
+
         public object EvlString(string str, EnviromentFrame env) {
             return VirtualMashine.Eval(Compiler.Compile(str), env);
         }

@@ -19,10 +19,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Ogam3;
+using Ogam3.Utils;
 
 namespace TestEvaluator {
     class Program {
         static void Main(string[] args) { // TODO
+            //var rr = "(defmacro (if2 c t f) (if c t f))".O3Eval();
+            //rr = "(if2 #t (display 11) (display 22))".O3Eval();
+            //"(defmacro (a body) body )".O3Eval();
+            //var rr = "(a (+ 1 2 3))".O3Eval();
             Base();
             IntrnalState();
             ThreadSafe();

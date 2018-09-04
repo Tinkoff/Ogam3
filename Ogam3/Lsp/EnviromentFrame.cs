@@ -18,29 +18,39 @@ using System;
 using System.Collections.Generic;
 
 namespace Ogam3.Lsp {
-    public class EnviromentFrame : IEnviromentFrame{
-        public EnviromentFrame Parent;
-
-        public Dictionary<string, dynamic> Variables;
-
-        public EnviromentFrame() {
-            Variables = new Dictionary<string, dynamic>();
-        }
-
+    public class EnviromentFrame : EnviromentFrame<dynamic> {
         public EnviromentFrame(EnviromentFrame parent) {
             Parent = parent;
             Variables = new Dictionary<string, dynamic>();
         }
 
-        public void Define(Symbol ident, dynamic value) {
+        public EnviromentFrame() {
+            Variables = new Dictionary<string, dynamic>();
+        }
+    }
+    public class EnviromentFrame<T> : IEnviromentFrame<T>{
+        public EnviromentFrame<T> Parent;
+
+        public Dictionary<string, T> Variables;
+
+        public EnviromentFrame() {
+            Variables = new Dictionary<string, T>();
+        }
+
+        public EnviromentFrame(EnviromentFrame<T> parent) {
+            Parent = parent;
+            Variables = new Dictionary<string, T>();
+        }
+
+        public void Define(Symbol ident, T value) {
             Variables[ident.Name] = value;
         }
 
-        public void Define(string ident, dynamic value) {
+        public void Define(string ident, T value) {
             Define(new Symbol(ident), value);
         }
 
-        public void Set(Symbol ident, dynamic value) {
+        public void Set(Symbol ident, T value) {
             if (Variables.ContainsKey(ident.Name)) {
                 Variables[ident.Name] = value;
                 return;
@@ -52,8 +62,8 @@ namespace Ogam3.Lsp {
             Parent.Set(ident, value);
         }
 
-        public dynamic Get(Symbol ident) {
-            dynamic res = null;
+        public T Get(Symbol ident) {
+            T res = default(T);
 
             if (Variables.TryGetValue(ident.Name, out res)) return res;
 
@@ -67,6 +77,8 @@ namespace Ogam3.Lsp {
         }
 
         public bool Lookup(Symbol ident) {
+            if (ident == null) return false;
+
             if (Variables.ContainsKey(ident.Name))
                 return true;
 
@@ -74,7 +86,7 @@ namespace Ogam3.Lsp {
         }
     }
 
-    public interface IEnviromentFrame {
-        void Define(string ident, dynamic value);
+    public interface IEnviromentFrame<T> {
+        void Define(string ident, T value);
     }
 }
