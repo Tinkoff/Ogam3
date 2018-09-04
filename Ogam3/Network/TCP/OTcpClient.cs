@@ -40,6 +40,7 @@ namespace Ogam3.Network.Tcp {
 
         private readonly IQueryInterface _serverQueryInterfaceProxy;
         private SymbolTable _symbolTable;
+        private bool _isReconnectEnabled = true;
 
         public OTcpClient(string host, int port, Action connectionStabilised = null,  Evaluator evaluator = null) {
             Host = host;
@@ -53,7 +54,7 @@ namespace Ogam3.Network.Tcp {
             _serverQueryInterfaceProxy = CreateProxy<IQueryInterface>();
 
             new Thread(() => {
-                while (true) {
+                while (_isReconnectEnabled) {
                     ConnectServer();
                     _connSync.Wait();
                 }
@@ -90,6 +91,7 @@ namespace Ogam3.Network.Tcp {
         }
 
         public Action ConnectionStabilised;
+        
         public event Action<Exception> ConnectionError;
 
         private void ConnectServer() {
@@ -158,6 +160,14 @@ namespace Ogam3.Network.Tcp {
 
         protected virtual void OnConnectionError(Exception ex) {
             ConnectionError?.Invoke(ex);
+        }
+
+        public void Dispose() {
+            _isReconnectEnabled = false;
+            _transfering?.Dispose();
+            _sendSync?.Dispose();
+            _connSync?.Dispose();
+            ClientTcp?.Close();
         }
     }
 }
