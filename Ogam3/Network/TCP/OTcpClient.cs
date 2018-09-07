@@ -25,7 +25,7 @@ using Ogam3.TxRx;
 using Ogam3.Utils;
 
 namespace Ogam3.Network.Tcp {
-    public class OTcpClient : ISomeClient{
+    public class OTcpClient : ISomeClient, IDisposable{
         public string Host;
         public int Port;
 
@@ -40,7 +40,7 @@ namespace Ogam3.Network.Tcp {
 
         private readonly IQueryInterface _serverQueryInterfaceProxy;
         private SymbolTable _symbolTable;
-        private bool _isReconnectEnabled = true;
+        private bool _isKeepConnection = true;
 
         public OTcpClient(string host, int port, Action connectionStabilised = null,  Evaluator evaluator = null) {
             Host = host;
@@ -54,7 +54,7 @@ namespace Ogam3.Network.Tcp {
             _serverQueryInterfaceProxy = CreateProxy<IQueryInterface>();
 
             new Thread(() => {
-                while (_isReconnectEnabled) {
+                while (_isKeepConnection) {
                     ConnectServer();
                     _connSync.Wait();
                 }
@@ -163,7 +163,7 @@ namespace Ogam3.Network.Tcp {
         }
 
         public void Dispose() {
-            _isReconnectEnabled = false;
+            _isKeepConnection = false;
             _transfering?.Dispose();
             _sendSync?.Dispose();
             _connSync?.Dispose();

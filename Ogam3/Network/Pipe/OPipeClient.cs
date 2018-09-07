@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -14,7 +15,7 @@ using Ogam3.TxRx;
 using Ogam3.Utils;
 
 namespace Ogam3.Network.Pipe {
-    public class OPipeClient : ISomeClient {
+    public class OPipeClient : ISomeClient, IDisposable {
         public uint BufferSize = 65535;
 
         private readonly Evaluator _evaluator;
@@ -25,6 +26,7 @@ namespace Ogam3.Network.Pipe {
 
         private readonly IQueryInterface _serverQueryInterfaceProxy;
         private SymbolTable _symbolTable;
+        private bool _isKeepConnection = true;
 
         private readonly Synchronizer _connSync = new Synchronizer(true);
         private readonly Synchronizer _sendSync = new Synchronizer(true);
@@ -44,7 +46,7 @@ namespace Ogam3.Network.Pipe {
             _serverQueryInterfaceProxy = CreateProxy<IQueryInterface>();
 
             new Thread(() => {
-                while (true) {
+                while (_isKeepConnection) {
                     ConnectPipeServer();
                     _connSync.Wait();
                     Thread.Sleep(3000); // Wait when OS close pipe if a pipe server was closed
@@ -145,6 +147,14 @@ namespace Ogam3.Network.Pipe {
         protected virtual void OnConnectionError(Exception ex) {
             ConnectionError?.Invoke(ex);
         }
+
+        public void Dispose() {
+            _isKeepConnection = false;
+            _connSync?.Dispose();
+            _sendSync?.Dispose();
+            _transfering?.Dispose();
+            pipeClient?.Dispose();
+        }
     }
 
     public class PipeClient : IDisposable {
@@ -159,13 +169,15 @@ namespace Ogam3.Network.Pipe {
         private object _locker = new object();
 
         public PipeClient(string pipeName) {
-            ReceivePipe = new NamedPipeServerStream(ClientPref + pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            ReceivePipe = new NamedPipeServerStream(ClientPref + pipeName + Process.GetCurrentProcess().Id, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
             SendPipe = new NamedPipeClientStream(".", ServerPref + pipeName, PipeDirection.Out);
         }
 
         public bool Connect() {
             lock (_locker) {
                 SendPipe.Connect();
+                var pidBuf = BitConverter.GetBytes(Process.GetCurrentProcess().Id);
+                SendPipe.Write(pidBuf,0, pidBuf.Length);
                 var sync = new Synchronizer(true);
                 ReceivePipe.BeginWaitForConnection(ar => {
                     try {

@@ -51,7 +51,7 @@ namespace PipeClient {
 
             var echoDto = pc.TestSerializer(dto);
 
-            Console.WriteLine($"DTO {echoDto.DateTimeValue}");
+            Console.WriteLine($"DTO {echoDto?.DateTimeValue}");
 
             Console.Write("Press Enter to continue...");
             Console.ReadLine();

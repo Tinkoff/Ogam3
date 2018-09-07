@@ -116,16 +116,22 @@ namespace Ogam3.Network.Pipe {
 
         private const string ServerPref = "server-";
         private const string ClientPref = "client-";
+        private string _pipeName;
 
         public PipeServer(string pipeName) {
+            _pipeName = pipeName;
             ReceivePipe = new NamedPipeServerStream(ServerPref + pipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances);
-            SendPipe = new NamedPipeClientStream(".", ClientPref + pipeName, PipeDirection.Out);
+            //SendPipe = new NamedPipeClientStream(".", ClientPref + pipeName, PipeDirection.Out);
         }
 
         private object _locker = new object();
         public bool WaitConnection() {
             lock (_locker) {
                 ReceivePipe.WaitForConnection();
+                var pidBuf = new byte[4];
+                var r = ReceivePipe.Read(pidBuf, 0, pidBuf.Length);
+                var pid = BitConverter.ToInt32(pidBuf,0);
+                SendPipe = new NamedPipeClientStream(".", ClientPref + _pipeName + pid.ToString(), PipeDirection.Out);
                 SendPipe.Connect();
             }
 
