@@ -163,21 +163,17 @@ namespace Ogam3.Network.Pipe {
         public PipeTransferStream ReceiveStream => new PipeTransferStream(ReceivePipe, Dispose);
         public PipeTransferStream SendStream => new PipeTransferStream(SendPipe, Dispose);
 
-        private const string ServerPref = "server-";
-        private const string ClientPref = "client-";
-
         private object _locker = new object();
 
         public PipeClient(string pipeName) {
-            ReceivePipe = new NamedPipeServerStream(ClientPref + pipeName + Process.GetCurrentProcess().Id, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            SendPipe = new NamedPipeClientStream(".", ServerPref + pipeName, PipeDirection.Out);
+            ReceivePipe = new NamedPipeServerStream(OPipeHelper.GenClientName(pipeName, Process.GetCurrentProcess().Id), PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            SendPipe = new NamedPipeClientStream(".", OPipeHelper.GenServerName(pipeName), PipeDirection.Out);
         }
 
         public bool Connect() {
             lock (_locker) {
                 SendPipe.Connect();
-                var pidBuf = BitConverter.GetBytes(Process.GetCurrentProcess().Id);
-                SendPipe.Write(pidBuf,0, pidBuf.Length);
+                OPipeHelper.SendClientPid(SendPipe, Process.GetCurrentProcess().Id);
                 var sync = new Synchronizer(true);
                 ReceivePipe.BeginWaitForConnection(ar => {
                     try {

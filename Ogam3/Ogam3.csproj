@@ -62,6 +62,7 @@
     <Compile Include="Lsp\VM.cs" />
     <Compile Include="Network\ISomeClient.cs" />
     <Compile Include="Network\Pipe\OPipeClient.cs" />
+    <Compile Include="Network\Pipe\OPipeHelper.cs" />
     <Compile Include="Network\Pipe\OPipeServer.cs" />
     <Compile Include="Network\Pipe\PipeTransferStream.cs" />
     <Compile Include="Network\TCP\IQueryInterface.cs" />
