@@ -23,7 +23,10 @@ namespace Ogam3.Utils {
     public class LogTextWriter : TextWriter {
         private readonly TextWriter _tw;
 
-        public static void InitLogMode() {
+        private static int _maxStringLength;
+
+        public static void InitLogMode(int maxStringLength=30000) {
+            _maxStringLength = maxStringLength;
             Console.SetOut(new LogTextWriter(Console.Out));
         }
 
@@ -68,9 +71,8 @@ namespace Ogam3.Utils {
         }
 
         private void StringCat(ref string str) {
-            const int maxStringLength = 30000;
-            if (str.Length > maxStringLength) {
-                str = str.Substring(0, maxStringLength) + "...";
+            if (str.Length > _maxStringLength) {
+                str = str.Substring(0, _maxStringLength) + "...";
             }
         }
 
