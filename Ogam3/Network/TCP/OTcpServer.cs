@@ -153,8 +153,19 @@ namespace Ogam3.Network.Tcp {
                 return (T)RemoteCallGenertor.CreateTcpCaller(typeof(T), this);
             }
 
+            protected void OnSpecialMessageEvt(SpecialMessage sm, object call) {
+                SpecialMessageEvt?.Invoke(sm, call);
+            }
+
+            public event Action<SpecialMessage, object> SpecialMessageEvt;
+
             public object Call(object seq) {
                 var resp = BinFormater.Read(new MemoryStream(Transfering.Send(BinFormater.Write(seq, _queryInterface.GetSymbolTable()).ToArray())), _queryInterface.GetSymbolTable());
+
+                if (resp.Car() is SpecialMessage) {
+                    OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);
+                    return null;
+                }
 
                 return resp?.Car();
             }
