@@ -583,6 +583,17 @@ namespace Ogam3.Serialization {
 
             if (cr.Errors.Count <= 0) return cr;
 
+            if (cr.Errors[0].ErrorNumber == "CS0012") {
+                var runtimeAss = Assembly.Load("System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+                DOMref.Add(runtimeAss.Location);
+                cp = new CompilerParameters(DOMref.ToArray()) {
+                    IncludeDebugInformation = false,
+                    GenerateInMemory = true
+                };
+                cr = provider.CompileAssemblyFromDom(cp, new[] {targetUnit});
+                if (cr.Errors.Count <= 0) return cr;
+            }
+
             var e = new Exception("Error in OSerializer dynamic compile module. See details in data property...");
             foreach (CompilerError ce in cr.Errors) {
                 e.Data[ce.ErrorNumber] = $"{t.Assembly}|{t.Name}  {ce}";
