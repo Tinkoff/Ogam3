@@ -21,9 +21,16 @@ using System.Text;
 
 namespace Ogam3.Utils {
     public class LogTextWriter : TextWriter {
+        private object _locker;
+
         private readonly TextWriter _tw;
 
         private static int _maxStringLength;
+
+        private StreamWriter _sw;
+
+        public StreamWriter Sw =>
+            _sw ?? (_sw = new StreamWriter(Console.OpenStandardOutput(), Console.OutputEncoding) {AutoFlush = true});
 
         public static void InitLogMode(int maxStringLength=30000) {
             _maxStringLength = maxStringLength;
@@ -32,6 +39,7 @@ namespace Ogam3.Utils {
 
         public LogTextWriter(TextWriter tw) {
             _tw = tw;
+            _locker = new object();
         }
 
         public override Encoding Encoding => _tw.Encoding;
@@ -42,32 +50,21 @@ namespace Ogam3.Utils {
         }
 
         void LogEvent(string msg) {
-            ((Action)delegate () {
-                var standardOutput = new StreamWriter(Console.OpenStandardOutput(), Console.OutputEncoding);
-                standardOutput.AutoFlush = true;
-
-                var header = GetHeader();
-
-                StringCat(ref msg);
-
-                var sb = new StringBuilder(msg.Length + header.Length + 2);
-
-                sb.AppendLine(header);
-                sb.AppendLine(msg);
-
-                standardOutput.Write(sb.ToString());
-            }).BeginInvoke(null, null);
+            StringCat(ref msg);
+            var header = GetHeader();
+            lock (_locker) {
+                Sw.WriteLine(header);
+                Sw.WriteLine(msg);
+                Sw.Flush();
+            }
         }
 
         void LogText(string msg) {
-            ((Action)delegate () {
-                var standardOutput = new StreamWriter(Console.OpenStandardOutput(), Console.OutputEncoding);
-                standardOutput.AutoFlush = true;
-
-                StringCat(ref msg);
-
-                standardOutput.Write(msg);
-            }).BeginInvoke(null, null);
+            StringCat(ref msg);
+            lock (_locker) {
+                Sw.Write(msg);
+                Sw.Flush();
+            }
         }
 
         private void StringCat(ref string str) {
