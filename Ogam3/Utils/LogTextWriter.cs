@@ -15,24 +15,25 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Ogam3.Utils {
     public class LogTextWriter : TextWriter {
         private object _locker;
-
         private readonly TextWriter _tw;
-
         private static int _maxStringLength;
-
         private StreamWriter _sw;
+        private Queue<string> MessageQueue;
 
         public StreamWriter Sw =>
-            _sw ?? (_sw = new StreamWriter(Console.OpenStandardOutput(), Console.OutputEncoding) {AutoFlush = true});
+            _sw ?? (_sw = new StreamWriter(Console.OpenStandardOutput(), Console.OutputEncoding) { AutoFlush = true });
 
-        public static void InitLogMode(int maxStringLength=30000) {
+        public static void InitLogMode(int maxStringLength = 30000) {
             _maxStringLength = maxStringLength;
             Console.SetOut(new LogTextWriter(Console.Out));
         }
@@ -40,6 +41,29 @@ namespace Ogam3.Utils {
         public LogTextWriter(TextWriter tw) {
             _tw = tw;
             _locker = new object();
+            MessageQueue = new Queue<string>();
+            new Thread(() => {
+                while (true) {
+                    try {
+                        if (MessageQueue.Any()) {
+                            Queue<string> writeQueue;
+                            lock (_locker) {
+                                writeQueue = new Queue<string>(MessageQueue);
+                                MessageQueue.Clear();
+                            }
+
+                            while (writeQueue.Any()) {
+                                Sw?.Write(writeQueue.Dequeue());
+                            }
+                            Sw?.Flush();
+                        } else {
+                            Thread.Sleep(1000);
+                        }
+                    } catch (Exception e) {
+                        Sw?.WriteLine(e);
+                    }
+                }
+            }) { IsBackground = true }.Start();
         }
 
         public override Encoding Encoding => _tw.Encoding;
@@ -49,21 +73,33 @@ namespace Ogam3.Utils {
                 $"{Environment.NewLine}---------- EVENT-{Process.GetCurrentProcess().ProcessName}[{Process.GetCurrentProcess().Id}]-{DateTime.Now:yyyyMMdd:HHmmss:fff} ----------{Environment.NewLine}";
         }
 
+        void TrimLog() {
+            if (MessageQueue.Count > 500000) {
+                while (MessageQueue.Count > 300000) {
+                    MessageQueue.Dequeue();
+                }
+
+                MessageQueue.Enqueue($"### LOG WAS TRIMMED...{Environment.NewLine}");
+            }
+        }
+
         void LogEvent(string msg) {
             StringCat(ref msg);
             var header = GetHeader();
             lock (_locker) {
-                Sw.WriteLine(header);
-                Sw.WriteLine(msg);
-                Sw.Flush();
+                var sb = new StringBuilder(header.Length + msg.Length);
+                sb.AppendLine(header);
+                sb.AppendLine(msg);
+                MessageQueue.Enqueue(sb.ToString());
+                TrimLog();
             }
         }
 
         void LogText(string msg) {
             StringCat(ref msg);
             lock (_locker) {
-                Sw.Write(msg);
-                Sw.Flush();
+                MessageQueue.Enqueue(msg);
+                TrimLog();
             }
         }
 
@@ -74,185 +110,125 @@ namespace Ogam3.Utils {
         }
 
         public override void WriteLine(string s) {
-            ((Action)delegate () {
-                LogEvent(s);
-            }).BeginInvoke(null, null);
+            LogEvent(s);
         }
 
         public override void WriteLine(string s, object obj0) {
-            ((Action)delegate () {
-                LogEvent(string.Format(s, obj0));
-            }).BeginInvoke(null, null);
+            LogEvent(string.Format(s, obj0));
         }
 
         public override void WriteLine(string s, object obj0, object obj1) {
-            ((Action)delegate () {
-                LogEvent(string.Format(s, obj0, obj1));
-            }).BeginInvoke(null, null);
+            LogEvent(string.Format(s, obj0, obj1));
         }
 
         public override void WriteLine(string s, object obj0, object obj1, object obj2) {
-            ((Action)delegate () {
-                LogEvent(string.Format(s, obj0, obj1, obj2));
-            }).BeginInvoke(null, null);
+            LogEvent(string.Format(s, obj0, obj1, obj2));
         }
 
         public override void WriteLine(string s, params object[] obj) {
-            ((Action)delegate () {
-                LogEvent(string.Format(s, obj));
-            }).BeginInvoke(null, null);
+            LogEvent(string.Format(s, obj));
         }
 
         public override void WriteLine(char c) {
-            ((Action)delegate () {
-                LogEvent(c.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(c.ToString());
         }
 
         public override void WriteLine(char[] buffer) {
-            ((Action)delegate () {
-                LogEvent(buffer.ToString());
-        }).BeginInvoke(null, null);
+            LogEvent(buffer.ToString());
         }
 
         public override void WriteLine(bool b) {
-            ((Action)delegate () {
-                LogEvent(b.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(b.ToString());
         }
 
         public override void WriteLine(int i) {
-            ((Action)delegate () {
-                LogEvent(i.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(i.ToString());
         }
 
         public override void WriteLine(uint i) {
-            ((Action)delegate () {
-                LogEvent(i.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(i.ToString());
         }
 
         public override void WriteLine(long l) {
-            ((Action)delegate () {
-                LogEvent(l.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(l.ToString());
         }
 
         public override void WriteLine(ulong l) {
-            ((Action)delegate () {
-                LogEvent(l.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(l.ToString());
         }
 
         public override void WriteLine(float f) {
-            ((Action)delegate () {
-                LogEvent(f.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(f.ToString());
         }
 
         public override void WriteLine(double d) {
-            ((Action)delegate () {
-                LogEvent(d.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(d.ToString());
         }
 
         public override void WriteLine(decimal dc) {
-            ((Action)delegate () {
-                LogEvent(dc.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(dc.ToString());
         }
 
         public override void WriteLine(object o) {
-            ((Action)delegate () {
-                LogEvent(o.ToString());
-            }).BeginInvoke(null, null);
+            LogEvent(o.ToString());
         }
 
         //*********************************************
 
         public override void Write(long value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
 
         public override void Write(int value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
 
         public override void Write(ulong value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
 
         public override void Write(float value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
 
         public override void Write(uint value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
 
         public override void Write(double value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
 
         public override void Write(char[] buffer) {
-            ((Action)delegate () {
-                LogText(buffer.ToString());
-            }).BeginInvoke(null, null);
+            LogText(buffer.ToString());
         }
 
         public override void Write(char value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
-        
+
         public override void Write(bool value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
 
         public override void Write(object value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
 
         public override void Write(decimal value) {
-            ((Action)delegate () {
-                LogText(value.ToString());
-            }).BeginInvoke(null, null);
+            LogText(value.ToString());
         }
-        
+
         public override void Write(string value) {
-            ((Action)delegate () {
-                LogText(string.Format(value));
-            }).BeginInvoke(null, null);
+            LogText(string.Format(value));
         }
 
         public override void Write(string format, object arg0) {
-            ((Action)delegate () {
-                LogText(string.Format(format, arg0));
-            }).BeginInvoke(null, null);
+            LogText(string.Format(format, arg0));
         }
 
         public override void Write(string format, params object[] arg) {
-            ((Action)delegate () {
-                LogText(string.Format(format, arg));
-            }).BeginInvoke(null, null);
+            LogText(string.Format(format, arg));
         }
 
         public override void Write(char[] buffer, int index, int count) {
@@ -260,15 +236,11 @@ namespace Ogam3.Utils {
         }
 
         public override void Write(string format, object arg0, object arg1) {
-            ((Action)delegate () {
-                LogText(string.Format(format, arg0, arg1));
-            }).BeginInvoke(null, null);
+            LogText(string.Format(format, arg0, arg1));
         }
 
         public override void Write(string format, object arg0, object arg1, object arg2) {
-            ((Action)delegate () {
-                LogText(string.Format(format, arg0, arg1, arg2));
-            }).BeginInvoke(null, null);
+            LogText(string.Format(format, arg0, arg1, arg2));
         }
     }
 }
