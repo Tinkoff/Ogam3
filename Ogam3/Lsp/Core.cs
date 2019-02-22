@@ -43,7 +43,7 @@ namespace Ogam3.Lsp {
             Define(">", new Func<dynamic, dynamic, dynamic>((a, b) => a > b));
             Define("<", new Func<dynamic, dynamic, dynamic>((a, b) => a < b));
 
-            Define("not", new Func<dynamic, dynamic>((a) => Evaluator.GetSBool(a)));
+            Define("not", new Func<dynamic, dynamic>((a) => !Evaluator.GetSBool(a)));
 
             Define("zero?", new Func<dynamic, dynamic>((a) => a == 0));
 
