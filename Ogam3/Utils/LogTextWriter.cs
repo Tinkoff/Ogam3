@@ -84,6 +84,10 @@ namespace Ogam3.Utils {
         }
 
         void LogEvent(string msg) {
+            if (msg == null) {
+                msg = string.Empty;
+            }
+
             StringCat(ref msg);
             var header = GetHeader();
             lock (_locker) {
@@ -104,7 +108,7 @@ namespace Ogam3.Utils {
         }
 
         private void StringCat(ref string str) {
-            if (str.Length > _maxStringLength) {
+            if (str?.Length > _maxStringLength) {
                 str = str.Substring(0, _maxStringLength) + "...";
             }
         }
