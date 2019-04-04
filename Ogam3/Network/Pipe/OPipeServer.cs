@@ -97,12 +97,14 @@ namespace Ogam3.Network.Pipe {
                 }
             } catch (Exception e) {
                 var ex = e;
+                transactLog.AppendLine($">| {ex}");
+                var sb = new StringBuilder();
                 while (ex != null) {
-                    transactLog.AppendLine($">| {ex}");
+                    sb.AppendLine(ex.Message);
                     ex = ex.InnerException;
                 }
                 Log?.Invoke(transactLog.ToString());
-                return BinFormater.Write(new SpecialMessage(ex.Message), symbolTable).ToArray();
+                return BinFormater.Write(new SpecialMessage(sb.ToString()), symbolTable).ToArray();
             }
         }
     }
