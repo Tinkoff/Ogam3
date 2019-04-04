@@ -101,7 +101,7 @@ namespace Ogam3.Network.Pipe {
                     transactLog.AppendLine($">| {ex}");
                     ex = ex.InnerException;
                 }
-                Log?.Invoke(sb.ToString());
+                Log?.Invoke(transactLog.ToString());
                 return BinFormater.Write(new SpecialMessage(ex.Message), symbolTable).ToArray();
             }
         }
