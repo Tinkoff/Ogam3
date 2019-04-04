@@ -79,10 +79,10 @@ namespace Ogam3.Network.Pipe {
         }
 
         public static byte[] DataHandler(Evaluator evl, byte[] data, SymbolTable symbolTable) {
+            var transactLog = new StringBuilder();
             try {
                 var receive = BinFormater.Read(new MemoryStream(data), symbolTable);
 
-                var transactLog = new StringBuilder();
                 transactLog.AppendLine($"<< {receive}");
 
                 var res = evl.EvlSeq(receive);
@@ -97,13 +97,12 @@ namespace Ogam3.Network.Pipe {
                 }
             } catch (Exception e) {
                 var ex = e;
-                var sb = new StringBuilder();
                 while (ex != null) {
-                    sb.AppendLine(ex.Message);
+                    transactLog.AppendLine($">| {ex}");
                     ex = ex.InnerException;
                 }
                 Log?.Invoke(sb.ToString());
-                return BinFormater.Write(new SpecialMessage(sb.ToString()), symbolTable).ToArray();
+                return BinFormater.Write(new SpecialMessage(ex.Message), symbolTable).ToArray();
             }
         }
     }
