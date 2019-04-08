@@ -36,6 +36,8 @@ namespace Ogam3.Utils {
             }
         }
 
+        public bool IsLock => IsLockedSafe;
+
         public Synchronizer(bool isLocked = false) {
             _locker = new object();
             _lockerProp = new object();
