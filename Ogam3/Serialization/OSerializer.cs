@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using Ogam3.Lsp;
 
@@ -143,12 +144,19 @@ namespace Ogam3.Serialization {
                     if (mb is FieldInfo) {
                         var f = (FieldInfo) mb;
 
-                        if (f.IsLiteral)
+                        if (f.IsLiteral || f.IsInitOnly) {
                             continue;
+                        }
+
                         SerializeMember(f.FieldType, f.Name, serializeMethod, serializeExpr, objCasted, current);
                     }
                     else if (mb is PropertyInfo) {
                         var p = (PropertyInfo) mb;
+
+                        if (!p.CanWrite) {
+                            continue;
+                        }
+
                         SerializeMember(p.PropertyType, p.Name, serializeMethod, serializeExpr, objCasted, current);
                     }
                 }
@@ -355,8 +363,9 @@ namespace Ogam3.Serialization {
                     if (mb is FieldInfo) {
                         var f = (FieldInfo) mb;
 
-                        if (f.IsLiteral)
+                        if (f.IsLiteral || f.IsInitOnly) {
                             continue;
+                        }
 
                         var memberType = f.FieldType;
                         var name = f.Name;
@@ -366,6 +375,11 @@ namespace Ogam3.Serialization {
 
                     else if (mb is PropertyInfo) {
                         var p = (PropertyInfo) mb;
+
+                        if (!p.CanWrite) {
+                            continue;
+                        }
+
                         var memberType = p.PropertyType;
                         var name = p.Name;
 
@@ -594,7 +608,13 @@ namespace Ogam3.Serialization {
                 if (cr.Errors.Count <= 0) return cr;
             }
 
-            var e = new Exception("Error in OSerializer dynamic compile module. See details in data property...");
+            var sb = new StringBuilder($"Error in OSerializer dynamic compile module for {t.FullName}.");
+            foreach (CompilerError ce in cr.Errors) {
+                sb.AppendLine(ce.ToString());
+            }
+            sb.AppendLine("See details in data property...");
+
+            var e = new Exception(sb.ToString());
             foreach (CompilerError ce in cr.Errors) {
                 e.Data[ce.ErrorNumber] = $"{t.Assembly}|{t.Name}  {ce}";
             }
