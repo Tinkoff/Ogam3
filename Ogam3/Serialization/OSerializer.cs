@@ -33,8 +33,8 @@ namespace Ogam3.Serialization {
         private static readonly ConcurrentDictionary<Type, Lazy<Func<object, Cons>>> Serializers =
             new ConcurrentDictionary<Type, Lazy<Func<object, Cons>>>();
 
-        private static readonly ConcurrentDictionary<Type, Lazy<Func<Cons, object>>> Deserializers =
-            new ConcurrentDictionary<Type, Lazy<Func<Cons, object>>>();
+        private static readonly ConcurrentDictionary<Type, Lazy<SerializerUnit>> Deserializers =
+            new ConcurrentDictionary<Type, Lazy<SerializerUnit>>();
 
         private static readonly List<string> RequiredNamespaces = new List<string>() {
             "System.Collections.Generic",
@@ -103,10 +103,10 @@ namespace Ogam3.Serialization {
 
                 };
             }
-            return GeneratePropsAndFieldsSerializer(typeParam);
+            return GeneratePropsAndFieldsSerializer(typeParam).TypeSerializer;
         }
 
-        public static Func<object, Cons> GeneratePropsAndFieldsSerializer(Type typeParam) {
+        public static SerializerUnit GeneratePropsAndFieldsSerializer(Type typeParam) {
             var targetUnit = new CodeCompileUnit();
 
             var sampleNamespace = GetCodeNameSpace(typeParam);
@@ -144,7 +144,11 @@ namespace Ogam3.Serialization {
                     if (mb is FieldInfo) {
                         var f = (FieldInfo) mb;
 
-                        if (f.IsLiteral || f.IsInitOnly) {
+                        //if (f.IsLiteral || f.IsInitOnly) {
+                        //    continue;
+                        //}
+
+                        if (f.IsLiteral) {
                             continue;
                         }
 
@@ -153,9 +157,9 @@ namespace Ogam3.Serialization {
                     else if (mb is PropertyInfo) {
                         var p = (PropertyInfo) mb;
 
-                        if (!p.CanWrite) {
-                            continue;
-                        }
+                        //if (!p.CanWrite) {
+                        //    continue;
+                        //}
 
                         SerializeMember(p.PropertyType, p.Name, serializeMethod, serializeExpr, objCasted, current);
                     }
@@ -167,11 +171,17 @@ namespace Ogam3.Serialization {
                 sampleClass.Members.Add(serializeMethod);
             }
 
+            var compileResult = CompileUnit(typeParam, targetUnit);
+
             var type =
-                CompileUnit(typeParam, targetUnit)
+                compileResult
+                    .CompilerResult
                     .CompiledAssembly.GetType($"{sampleNamespace.Name}.{sampleClass.Name}");
             var method = type.GetMethod(methodName);
-            return obj => (Cons) method?.Invoke(null, new[] {obj});
+
+            var serializerUnit = new SerializerUnit() { CompiledUnit = compileResult, TypeSerializer = obj => (Cons)method?.Invoke(null, new[] { obj }) };
+
+            return serializerUnit;
         }
 
         private static void SerializeMember(Type memberType, string memberName, CodeMemberMethod serializeMethod,
@@ -211,13 +221,16 @@ namespace Ogam3.Serialization {
             return pair == null
                 ? null
                 : Deserializers.GetOrAdd(typeParam,
-                        type =>
-                            new Lazy<Func<Cons, object>>(() => GenerateDeserializer(type),
-                                LazyThreadSafetyMode.ExecutionAndPublication))?
-                    .Value(pair);
+                        type => new Lazy<SerializerUnit>(() => GenerateDeserializer(type),LazyThreadSafetyMode.ExecutionAndPublication))?.Value.TypeDeserializer(pair);
         }
 
-        private static Func<Cons, object> GenerateDeserializer(Type t) {
+        public class SerializerUnit {
+            public Func<object, Cons> TypeSerializer;
+            public Func<Cons, object> TypeDeserializer;
+            public CompiledUnit CompiledUnit;
+        }
+
+        private static SerializerUnit GenerateDeserializer(Type t) {
             var targetUnit = new CodeCompileUnit();
 
             CodeNamespace samples = GetCodeNameSpace(t);
@@ -401,10 +414,17 @@ namespace Ogam3.Serialization {
             deserializeMethod.Statements.Add(returnStatement);
             targetClass.Members.Add(deserializeMethod);
 
-            var type = CompileUnit(t, targetUnit)
+            var compileResult = CompileUnit(t, targetUnit);
+
+            var type = compileResult
+                .CompilerResult
                 .CompiledAssembly.GetType($"{samples.Name}.{targetClass.Name}");
             var method = type.GetMethod(methodName);
-            return pair => method?.Invoke(null, new[] {pair});
+
+            var serializerUnit = new SerializerUnit()
+                {CompiledUnit = compileResult, TypeDeserializer = pair => method?.Invoke(null, new[] {pair})};
+
+            return serializerUnit;
         }
 
         private static void DeserializeMember(CodeMemberMethod deserializeMethod, Type memberType, string name) {
@@ -569,16 +589,29 @@ namespace Ogam3.Serialization {
             return t.IsPrimitive || t == typeof(string) || t == typeof(DateTime) || t == typeof(Decimal);
         }
 
-        private static CompilerResults CompileUnit(Type t, CodeCompileUnit targetUnit, string sourceFileName = null) {
+        public class CompiledUnit {
+            public string SourceCode;
+            public CompilerResults CompilerResult;
+        }
+
+        private static CompiledUnit CompileUnit(Type t, CodeCompileUnit targetUnit, string sourceFileName = null) {
             var provider = CodeDomProvider.CreateProvider("CSharp");
 
-            if (!string.IsNullOrEmpty(sourceFileName)) {
-                var options = new CodeGeneratorOptions();
-                using (StreamWriter sourceWriter = new StreamWriter($"{sourceFileName}.cs")) {
-                    provider.GenerateCodeFromCompileUnit(
-                        targetUnit, sourceWriter, options);
-                }
+            var unit = new CompiledUnit();
+
+            var options = new CodeGeneratorOptions();
+            using (StringWriter sourceWriter = new StringWriter()) {
+                provider.GenerateCodeFromCompileUnit(targetUnit, sourceWriter, options);
+                unit.SourceCode = sourceWriter.ToString();
             }
+
+            //if (!string.IsNullOrEmpty(sourceFileName)) {
+            //    var options = new CodeGeneratorOptions();
+            //    using (StreamWriter sourceWriter = new StreamWriter($"{sourceFileName}.cs")) {
+            //        provider.GenerateCodeFromCompileUnit(
+            //            targetUnit, sourceWriter, options);
+            //    }
+            //}
 
             var DOMref =
                 AppDomain.CurrentDomain.GetAssemblies()
@@ -594,8 +627,9 @@ namespace Ogam3.Serialization {
             };
 
             var cr = provider.CompileAssemblyFromDom(cp, new[] {targetUnit});
+            unit.CompilerResult = cr;
 
-            if (cr.Errors.Count <= 0) return cr;
+            if (cr.Errors.Count <= 0) return unit;
 
             if (cr.Errors[0].ErrorNumber == "CS0012") {
                 var runtimeAss = Assembly.Load("System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
@@ -605,7 +639,10 @@ namespace Ogam3.Serialization {
                     GenerateInMemory = true
                 };
                 cr = provider.CompileAssemblyFromDom(cp, new[] {targetUnit});
-                if (cr.Errors.Count <= 0) return cr;
+
+                unit.CompilerResult = cr;
+
+                if (cr.Errors.Count <= 0) return unit;
             }
 
             var sb = new StringBuilder($"Error in OSerializer dynamic compile module for {t.FullName}.");
