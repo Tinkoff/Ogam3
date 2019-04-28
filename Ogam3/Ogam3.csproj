@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Frt\OForth.cs" />
     <Compile Include="Lsp\BinFormater.cs" />
     <Compile Include="Lsp\Compiler.cs" />
     <Compile Include="Lsp\Cons.cs" />
@@ -56,7 +57,6 @@
     <Compile Include="Lsp\Lambda.cs" />
     <Compile Include="Lsp\Params.cs" />
     <Compile Include="Lsp\Reader.cs" />
-    <Compile Include="Lsp\Reflect.cs" />
     <Compile Include="Lsp\SpecialMessage.cs" />
     <Compile Include="Lsp\Symbol.cs" />
     <Compile Include="Lsp\VM.cs" />
@@ -74,6 +74,7 @@
     <Compile Include="Serialization\ODataBase\MorpherDb.cs" />
     <Compile Include="Serialization\ODataBase\ItemDb.cs" />
     <Compile Include="Utils\DbObjectBase.cs" />
+    <Compile Include="Utils\Reflect.cs" />
     <Compile Include="Utils\SGuid.cs" />
     <Compile Include="Utils\LogTextWriter.cs" />
     <Compile Include="Utils\StringExtension.cs" />

@@ -26,7 +26,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipeServer", "Examples\Pipe\PipeServer\PipeServer.csproj", "{9B29992E-D031-4CBE-826A-C8407DBA51CA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipeClient", "Examples\Pipe\PipeClient\PipeClient.csproj", "{5A76533C-9D02-48B1-BB07-B7C7617CD895}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataBase", "Examples\DataBase\DataBase.csproj", "{3CA3814C-9961-4564-8564-F0C2F9428554}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestForth", "Tests\TestForth\TestForth.csproj", "{B029B691-557C-4F3A-9231-6ABD4C0C1919}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -70,6 +73,10 @@ Global
 		{3CA3814C-9961-4564-8564-F0C2F9428554}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CA3814C-9961-4564-8564-F0C2F9428554}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CA3814C-9961-4564-8564-F0C2F9428554}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B029B691-557C-4F3A-9231-6ABD4C0C1919}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B029B691-557C-4F3A-9231-6ABD4C0C1919}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B029B691-557C-4F3A-9231-6ABD4C0C1919}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B029B691-557C-4F3A-9231-6ABD4C0C1919}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -85,6 +92,7 @@ Global
 		{9B29992E-D031-4CBE-826A-C8407DBA51CA} = {927711C4-032D-4714-B0CD-65A5F480BCDE}
 		{5A76533C-9D02-48B1-BB07-B7C7617CD895} = {927711C4-032D-4714-B0CD-65A5F480BCDE}
 		{3CA3814C-9961-4564-8564-F0C2F9428554} = {A9204EF7-6FDC-4A39-A5DF-79989788D50D}
+		{B029B691-557C-4F3A-9231-6ABD4C0C1919} = {5062EB51-B061-4777-AB5B-84F87AD8D77F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4542CFE0-FDC3-4AD2-A34F-DE53B310BE28}

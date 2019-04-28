@@ -219,7 +219,7 @@ namespace Ogam3.Lsp {
                     throw new Exception("MemberName is empty");
                 }
 
-                return Reflect.GetPropValue(inst, memberName);
+                return Ogam3.Utils.Reflect.GetPropValue(inst, memberName);
             }));
 
             Define("set-member!", new Func<object, object, object, dynamic>((inst, name, value) => {
@@ -236,7 +236,7 @@ namespace Ogam3.Lsp {
                     throw new Exception("MemberName is empty");
                 }
 
-                return Reflect.SetPropValue(inst, memberName, value);
+                return Ogam3.Utils.Reflect.SetPropValue(inst, memberName, value);
             }));
 
             Define("load-assembly", new Func<string, bool>((path) => {
