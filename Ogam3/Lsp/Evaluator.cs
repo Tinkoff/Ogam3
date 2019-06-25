@@ -37,6 +37,7 @@ namespace Ogam3.Lsp {
         }
 
         public object EvlString(string str, EnviromentFrame env) {
+            if (string.IsNullOrWhiteSpace(str)) return null;
             return VirtualMashine.Eval(Compiler.Compile(str), env);
         }
 
