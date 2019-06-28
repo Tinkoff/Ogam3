@@ -39,22 +39,22 @@ namespace Ogam3.Lsp {
 
             var curent = root;
 
-            var set = new Action<object>(o => {
+
+            void Set(object o) {
                 if (isDot) {
                     curent.SetCdr(o);
                     isDot = false;
-                }
-                else {
+                } else {
                     curent.Add(o);
                 }
-            });
+            }
 
             foreach (var c in str) {
                 switch (state) {
                     case ReadState.Normal: {
                         if (c == '(') {
                             if (!string.IsNullOrWhiteSpace(word)) {
-                                set(ParseSymbol(word));
+                                Set(ParseSymbol(word));
                                 word = "";
                             }
 
@@ -65,7 +65,7 @@ namespace Ogam3.Lsp {
                         }
                         else if (c == ')') {
                             if (!string.IsNullOrWhiteSpace(word)) {
-                                set(ParseSymbol(word));
+                                Set(ParseSymbol(word));
                                 word = "";
                             }
 
@@ -99,7 +99,7 @@ namespace Ogam3.Lsp {
                         }
                         else if (c == '\'') {
                             var nod = new Cons(new Symbol("quote"));
-                            set(nod);
+                            Set(nod);
                             curent = nod;
                         }
                         else {
@@ -117,17 +117,17 @@ namespace Ogam3.Lsp {
                         switch (c) {
                             case 'T':
                             case 't':
-                                set(true);
+                                Set(true);
                                 state = ReadState.Normal;
                                 break;
                             case 'F':
                             case 'f':
-                                set(false);
+                                Set(false);
                                 state = ReadState.Normal;
                                 break;
                             case '(': {
                                 var nod = new Cons(new Symbol("vector"));
-                                set(nod);
+                                Set(nod);
                                 stack.Push(nod);
                                 curent = nod;
                                 state = ReadState.Normal;
@@ -147,7 +147,7 @@ namespace Ogam3.Lsp {
                         break;
                     }
                     case ReadState.Charter: {
-                        set(c);
+                        Set(c);
                         state = ReadState.Normal;
                         break;
                     }
@@ -163,7 +163,7 @@ namespace Ogam3.Lsp {
                     }
                     case ReadState.String: { // in string
                         if (c == '\"') {
-                            set(word);
+                            Set(word);
                             word = "";
                             state = ReadState.Normal;
                         } else if (c == '\\') {  
@@ -178,7 +178,7 @@ namespace Ogam3.Lsp {
             } // foreach c
 
             if (!string.IsNullOrWhiteSpace(word)) {
-                set(state == ReadState.String ? word : ParseSymbol(word));
+                Set(state == ReadState.String ? word : ParseSymbol(word));
             }
 
             return root;

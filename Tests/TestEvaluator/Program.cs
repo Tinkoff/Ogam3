@@ -84,6 +84,7 @@ namespace TestEvaluator {
 
         static bool Base() {
             object result = null;
+            result = "'(a . b)".O3Eval();
             result = "(+ 111 222 333)".O3Eval();
             result = "(if #t 1 2)".O3Eval();
             result = "(if #f 1 2)".O3Eval();
