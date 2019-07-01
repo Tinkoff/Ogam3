@@ -45,6 +45,10 @@ namespace Ogam3.Lsp {
             return VirtualMashine.Eval(Compiler.Compile(seq), env);
         }
 
+        public object ApplyClosure(VirtualMashine.Closure closure, params object[] args) {
+            return EvlSeq(new Cons(Cons.List(new object[] { closure }.Concat(args ?? new object[0]).ToArray())));
+        }
+
         public static bool GetSBool(object o) {
             if (o == null)
                 return false;

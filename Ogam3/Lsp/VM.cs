@@ -178,7 +178,7 @@ namespace Ogam3.Lsp {
                 return true;
         }
 
-        class Closure {
+        public class Closure {
             public Symbol[] Argument;
             public Operation Body;
             public EnviromentFrame En;
