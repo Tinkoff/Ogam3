@@ -153,15 +153,10 @@ namespace Ogam3.Lsp {
             stack.Push(root);
             var isDot = false; // подумать
 
-            var set = new Action<object>(o => {
-                if (isDot) {
-                    stack.Peek().SetCdr(o);
-                    isDot = false;
-                }
-                else {
-                    stack.Peek().Add(o);
-                }
-            });
+            void Set(object o) {
+                stack.Peek().Add(o, isDot);
+                isDot = false;
+            }
 
             while (true) {
                 var b = data.ReadByte();
@@ -183,206 +178,206 @@ namespace Ogam3.Lsp {
                         break;
                         //FIXED SIZE
                     case Codes.Integer16_16:
-                        set(BitConverter.ToInt16(R(data, 2), 0));
+                        Set(BitConverter.ToInt16(R(data, 2), 0));
                         break;
                     case Codes.Integer16_8:
-                        set(BitConverter.ToInt16(R(data, 1, X1), 0));
+                        Set(BitConverter.ToInt16(R(data, 1, X1), 0));
                         break;
                     case Codes.Integer16_8_Negate:
-                        set(BitConverter.ToInt16(R(data, 1, XN1), 0));
+                        Set(BitConverter.ToInt16(R(data, 1, XN1), 0));
                         break;
                     case Codes.Integer16_0:
-                        set((short)0);
+                        Set((short)0);
                         break;
                     case Codes.Integer16_16_u:
-                        set(BitConverter.ToUInt16(R(data, 2), 0));
+                        Set(BitConverter.ToUInt16(R(data, 2), 0));
                         break;
                     case Codes.Integer16_8_u:
-                        set(BitConverter.ToUInt16(R(data, 1, X1), 0));
+                        Set(BitConverter.ToUInt16(R(data, 1, X1), 0));
                         break;
                     case Codes.Integer16_0_u:
-                        set((ushort)0);
+                        Set((ushort)0);
                         break;
                     case Codes.Integer32_32:
-                        set(BitConverter.ToInt32(R(data, 4), 0));
+                        Set(BitConverter.ToInt32(R(data, 4), 0));
                         break;
                     case Codes.Integer32_24:
-                        set(BitConverter.ToInt32(R(data, 3, X1), 0));
+                        Set(BitConverter.ToInt32(R(data, 3, X1), 0));
                         break;
                     case Codes.Integer32_24_Negate:
-                        set(BitConverter.ToInt32(R(data, 3, XN1), 0));
+                        Set(BitConverter.ToInt32(R(data, 3, XN1), 0));
                         break;
                     case Codes.Integer32_16:
-                        set(BitConverter.ToInt32(R(data, 2, X2), 0));
+                        Set(BitConverter.ToInt32(R(data, 2, X2), 0));
                         break;
                     case Codes.Integer32_16_Negate:
-                        set(BitConverter.ToInt32(R(data, 2, XN2), 0));
+                        Set(BitConverter.ToInt32(R(data, 2, XN2), 0));
                         break;
                     case Codes.Integer32_8:
-                        set(BitConverter.ToInt32(R(data, 1, X3), 0));
+                        Set(BitConverter.ToInt32(R(data, 1, X3), 0));
                         break;
                     case Codes.Integer32_8_Negate:
-                        set(BitConverter.ToInt32(R(data, 1, XN3), 0));
+                        Set(BitConverter.ToInt32(R(data, 1, XN3), 0));
                         break;
                     case Codes.Integer32_0:
-                        set(0);
+                        Set(0);
                         break;
                     case Codes.Integer32_32_u:
-                        set(BitConverter.ToUInt32(R(data, 4), 0));
+                        Set(BitConverter.ToUInt32(R(data, 4), 0));
                         break;
                     case Codes.Integer32_24_u:
-                        set(BitConverter.ToUInt32(R(data, 3, X1), 0));
+                        Set(BitConverter.ToUInt32(R(data, 3, X1), 0));
                         break;
                     case Codes.Integer32_16_u:
-                        set(BitConverter.ToUInt32(R(data, 2, X2), 0));
+                        Set(BitConverter.ToUInt32(R(data, 2, X2), 0));
                         break;
                     case Codes.Integer32_8_u:
-                        set(BitConverter.ToUInt32(R(data, 1, X3), 0));
+                        Set(BitConverter.ToUInt32(R(data, 1, X3), 0));
                         break;
                     case Codes.Integer32_0_u:
-                        set(0u);
+                        Set(0u);
                         break;
                     case Codes.Integer64_64:
-                        set(BitConverter.ToInt64(R(data, 8), 0));
+                        Set(BitConverter.ToInt64(R(data, 8), 0));
                         break;
                     case Codes.Integer64_56:
-                        set(BitConverter.ToInt64(R(data, 7, X1), 0));
+                        Set(BitConverter.ToInt64(R(data, 7, X1), 0));
                         break;
                     case Codes.Integer64_56_Negate:
-                        set(BitConverter.ToInt64(R(data, 7, XN1), 0));
+                        Set(BitConverter.ToInt64(R(data, 7, XN1), 0));
                         break;
                     case Codes.Integer64_48:
-                        set(BitConverter.ToInt64(R(data, 6, X2), 0));
+                        Set(BitConverter.ToInt64(R(data, 6, X2), 0));
                         break;
                     case Codes.Integer64_48_Negate:
-                        set(BitConverter.ToInt64(R(data, 6, XN2), 0));
+                        Set(BitConverter.ToInt64(R(data, 6, XN2), 0));
                         break;
                     case Codes.Integer64_40:
-                        set(BitConverter.ToInt64(R(data, 5, X3), 0));
+                        Set(BitConverter.ToInt64(R(data, 5, X3), 0));
                         break;
                     case Codes.Integer64_40_Negate:
-                        set(BitConverter.ToInt64(R(data, 5, XN3), 0));
+                        Set(BitConverter.ToInt64(R(data, 5, XN3), 0));
                         break;
                     case Codes.Integer64_32:
-                        set(BitConverter.ToInt64(R(data, 4, X4), 0));
+                        Set(BitConverter.ToInt64(R(data, 4, X4), 0));
                         break;
                     case Codes.Integer64_32_Negate:
-                        set(BitConverter.ToInt64(R(data, 4, XN4), 0));
+                        Set(BitConverter.ToInt64(R(data, 4, XN4), 0));
                         break;
                     case Codes.Integer64_24:
-                        set(BitConverter.ToInt64(R(data, 3, X5), 0));
+                        Set(BitConverter.ToInt64(R(data, 3, X5), 0));
                         break;
                     case Codes.Integer64_24_Negate:
-                        set(BitConverter.ToInt64(R(data, 3, XN5), 0));
+                        Set(BitConverter.ToInt64(R(data, 3, XN5), 0));
                         break;
                     case Codes.Integer64_16:
-                        set(BitConverter.ToInt64(R(data, 2, X6), 0));
+                        Set(BitConverter.ToInt64(R(data, 2, X6), 0));
                         break;
                     case Codes.Integer64_16_Negate:
-                        set(BitConverter.ToInt64(R(data, 2, XN6), 0));
+                        Set(BitConverter.ToInt64(R(data, 2, XN6), 0));
                         break;
                     case Codes.Integer64_8:
-                        set(BitConverter.ToInt64(R(data, 1, X7), 0));
+                        Set(BitConverter.ToInt64(R(data, 1, X7), 0));
                         break;
                     case Codes.Integer64_8_Negate:
-                        set(BitConverter.ToInt64(R(data, 1, XN7), 0));
+                        Set(BitConverter.ToInt64(R(data, 1, XN7), 0));
                         break;
                     case Codes.Integer64_0:
-                        set(0L);
+                        Set(0L);
                         break;
                     case Codes.Integer64_64_u:
-                        set(BitConverter.ToUInt64(R(data, 8), 0));
+                        Set(BitConverter.ToUInt64(R(data, 8), 0));
                         break;
                     case Codes.Integer64_56_u:
-                        set(BitConverter.ToUInt64(R(data, 7, X1), 0));
+                        Set(BitConverter.ToUInt64(R(data, 7, X1), 0));
                         break;
                     case Codes.Integer64_48_u:
-                        set(BitConverter.ToUInt64(R(data, 6, X2), 0));
+                        Set(BitConverter.ToUInt64(R(data, 6, X2), 0));
                         break;
                     case Codes.Integer64_40_u:
-                        set(BitConverter.ToUInt64(R(data, 5, X3), 0));
+                        Set(BitConverter.ToUInt64(R(data, 5, X3), 0));
                         break;
                     case Codes.Integer64_32_u:
-                        set(BitConverter.ToUInt64(R(data, 4, X4), 0));
+                        Set(BitConverter.ToUInt64(R(data, 4, X4), 0));
                         break;
                     case Codes.Integer64_24_u:
-                        set(BitConverter.ToUInt64(R(data, 3, X5), 0));
+                        Set(BitConverter.ToUInt64(R(data, 3, X5), 0));
                         break;
                     case Codes.Integer64_16_u:
-                        set(BitConverter.ToUInt64(R(data, 2, X6), 0));
+                        Set(BitConverter.ToUInt64(R(data, 2, X6), 0));
                         break;
                     case Codes.Integer64_8_u:
-                        set(BitConverter.ToUInt64(R(data, 1, X7), 0));
+                        Set(BitConverter.ToUInt64(R(data, 1, X7), 0));
                         break;
                     case Codes.Integer64_0_u:
-                        set(0UL);
+                        Set(0UL);
                         break;
                     case Codes.Byte:
-                        set(data.ReadByte());
+                        Set(data.ReadByte());
                         break;
                     case Codes.BoolTrue:
-                        set(true);
+                        Set(true);
                         break;
                     case Codes.BoolFalse:
-                        set(false);
+                        Set(false);
                         break;
                     case Codes.Charter8:
-                        set((char)data.ReadByte());
+                        Set((char)data.ReadByte());
                         break;
                     case Codes.Charter32:
-                        set(Encoding.UTF32.GetChars(R(data, 4)).FirstOrDefault());
+                        Set(Encoding.UTF32.GetChars(R(data, 4)).FirstOrDefault());
                         break;
                     case Codes.Float32:
-                        set(BitConverter.ToSingle(R(data, 4), 0));
+                        Set(BitConverter.ToSingle(R(data, 4), 0));
                         break;
                     case Codes.Float64:
-                        set(BitConverter.ToDouble(R(data, 8), 0));
+                        Set(BitConverter.ToDouble(R(data, 8), 0));
                         break;
                         //FLOAT SIZE
                     case Codes.SymbolShort:
-                        set(new Symbol(Encoding.UTF8.GetString(R(data, data.ReadByte()))));
+                        Set(new Symbol(Encoding.UTF8.GetString(R(data, data.ReadByte()))));
                         break;
                     case Codes.SymbolLong:
-                        set(new Symbol(Encoding.UTF8.GetString(R(data, BitConverter.ToInt16(R(data, 2), 0)))));
+                        Set(new Symbol(Encoding.UTF8.GetString(R(data, BitConverter.ToInt16(R(data, 2), 0)))));
                         break;
                     case Codes.SymbolIndex:
                         if (symbolTable != null) {
-                            set(new Symbol(symbolTable.Get(BitConverter.ToUInt16(R(data, 2), 0))));
+                            Set(new Symbol(symbolTable.Get(BitConverter.ToUInt16(R(data, 2), 0))));
                         }
                         else {
                             R(data, 2);
-                            set(new Symbol("<undefined-symbol-index>"));
+                            Set(new Symbol("<undefined-symbol-index>"));
                         }
 
                         break;
                     case Codes.String32_32:
-                        set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0))));
+                        Set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0))));
                         break;
                     case Codes.String32_24:
-                        set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 3, X1), 0))));
+                        Set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 3, X1), 0))));
                         break;
                     case Codes.String32_16:
-                        set(Encoding.UTF8.GetString(R(data, BitConverter.ToUInt16(R(data, 2), 0))));
+                        Set(Encoding.UTF8.GetString(R(data, BitConverter.ToUInt16(R(data, 2), 0))));
                         break;
                     case Codes.String32_8:
-                        set(Encoding.UTF8.GetString(R(data, data.ReadByte())));
+                        Set(Encoding.UTF8.GetString(R(data, data.ReadByte())));
                         break;
                     case Codes.String32_0:
-                        set("");
+                        Set("");
                         break;
                     case Codes.StreamShort:
-                        set(new MemoryStream(R(data, BitConverter.ToInt32(R(data, 4), 0))));
+                        Set(new MemoryStream(R(data, BitConverter.ToInt32(R(data, 4), 0))));
                         break;
                     case Codes.Null:
-                        set(null);
+                        Set(null);
                         break;
                     case Codes.DateTime:
-                        set(DateTime.FromBinary(BitConverter.ToInt64(R(data, 8), 0)));
+                        Set(DateTime.FromBinary(BitConverter.ToInt64(R(data, 8), 0)));
                         break;
                     case Codes.StreamLong: // TODO
                         throw new Exception("Not supported");
                     case Codes.SpecialMessage:
-                        set(new SpecialMessage(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0)))));
+                        Set(new SpecialMessage(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0)))));
                         break;
                     default:
                         throw new Exception("Bad data format!");
