@@ -22,7 +22,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Ogam3.Lsp {
+namespace Ogam3.Lsp.Defaults {
     public class Core : EnviromentFrame {
         public Core() {
             DefineBool();

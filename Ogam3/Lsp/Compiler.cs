@@ -21,9 +21,9 @@ using System.Runtime.InteropServices;
 
 namespace Ogam3.Lsp {
     public class Compiler {
-        public static Operation Compile(string str) {
-            return Compile(Reader.Read(str));
-        }
+        //public static Operation Compile(string str) {
+        //    return Compile(Reader.Read(str));
+        //}
 
         public static EnviromentFrame<Macro> macro = new EnviromentFrame<Macro>();
 

@@ -17,36 +17,39 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Ogam3.Lsp.Defaults;
 
 namespace Ogam3.Lsp {
     public class Evaluator {
 
         public EnviromentFrame DefaultEnviroment = new Core();
+        public MacroSystem MacroSystem = new CoreMacro();
 
 
-        public object EvlString(string str) {
-            return EvlString(str, DefaultEnviroment);
+        public object EvlString(string str, bool isWithMacro = true) {
+            return EvlString(str, DefaultEnviroment, isWithMacro);
         }
 
-        public object EvlSeq(Cons seq) {
-            return EvlSeq(seq, DefaultEnviroment);
+        public object EvlSeq(Cons seq, bool isWithMacro = true) {
+            return EvlSeq(seq, DefaultEnviroment, isWithMacro);
         }
 
-        public object EvlExp(Cons seq) {
-            return EvlSeq(new Cons(seq), DefaultEnviroment);
+        public object EvlExp(Cons seq, bool isWithMacro = true) {
+            return EvlSeq(new Cons(seq), DefaultEnviroment, isWithMacro);
         }
 
-        public object EvlString(string str, EnviromentFrame env) {
+        public object EvlString(string str, EnviromentFrame env, bool isWithMacro = true) {
             if (string.IsNullOrWhiteSpace(str)) return null;
-            return VirtualMashine.Eval(Compiler.Compile(str), env);
+            return EvlSeq(Reader.Read(str), isWithMacro);
+            //return VirtualMashine.Eval(Compiler.Compile(str), env);
         }
 
-        public object EvlSeq(Cons seq, EnviromentFrame env) {
-            return VirtualMashine.Eval(Compiler.Compile(seq), env);
+        public object EvlSeq(Cons seq, EnviromentFrame env, bool isWithMacro = true) {
+            return VirtualMashine.Eval(isWithMacro ? Compiler.Compile(MacroSystem.MacroProcessing(seq)) : Compiler.Compile(seq), env);
         }
 
         public object ApplyClosure(VirtualMashine.Closure closure, params object[] args) {
-            return EvlSeq(new Cons(Cons.List(new object[] { closure }.Concat(args ?? new object[0]).ToArray())));
+            return EvlSeq(new Cons(Cons.List(new object[] { closure }.Concat(args ?? new object[0]).ToArray())), false);
         }
 
         public static bool GetSBool(object o) {

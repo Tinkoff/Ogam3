@@ -39,14 +39,9 @@ namespace Ogam3.Lsp {
 
             var curent = root;
 
-
             void Set(object o) {
-                if (isDot) {
-                    curent.SetCdr(o);
-                    isDot = false;
-                } else {
-                    curent.Add(o);
-                }
+                curent.Add(o, isDot);
+                isDot = false;
             }
 
             foreach (var c in str) {

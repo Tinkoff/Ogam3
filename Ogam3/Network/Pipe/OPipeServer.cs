@@ -85,7 +85,7 @@ namespace Ogam3.Network.Pipe {
 
                 transactLog.AppendLine($"<< {receive}");
 
-                var res = evl.EvlSeq(receive);
+                var res = evl.EvlSeq(receive, false);
 
                 transactLog.AppendLine($">> {res}");
                 Log?.Invoke(transactLog.ToString().Trim());

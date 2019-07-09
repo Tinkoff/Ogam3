@@ -32,7 +32,7 @@ namespace Ogam3 {
             if (string.IsNullOrWhiteSpace(expr)) return null;
 
 
-            return (args?.Any() ?? false) ? evaluator.EvlString(string.Format(expr, O2Strings(args))) : evaluator.EvlString(expr);
+            return (args?.Any() ?? false) ? evaluator.EvlString(string.Format(expr, O2Strings(args)), true) : evaluator.EvlString(expr, true);
         }
 
         private static object[] O2Strings(object[] args) {

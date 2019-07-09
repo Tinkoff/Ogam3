@@ -49,12 +49,14 @@
     <Compile Include="Lsp\Compiler.cs" />
     <Compile Include="Lsp\Cons.cs" />
     <Compile Include="Lsp\Continuation.cs" />
-    <Compile Include="Lsp\Core.cs" />
+    <Compile Include="Lsp\Defaults\Core.cs" />
+    <Compile Include="Lsp\Defaults\CoreMacro.cs" />
     <Compile Include="Lsp\EnviromentFrame.cs" />
     <Compile Include="Lsp\Evaluator.cs" />
     <Compile Include="Lsp\Generators\ClassRegistrator.cs" />
     <Compile Include="Lsp\Generators\RemoteCallGenertor.cs" />
     <Compile Include="Lsp\Lambda.cs" />
+    <Compile Include="Lsp\MacroSystem.cs" />
     <Compile Include="Lsp\Params.cs" />
     <Compile Include="Lsp\Reader.cs" />
     <Compile Include="Lsp\SpecialMessage.cs" />

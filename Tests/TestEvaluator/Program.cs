@@ -19,15 +19,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Ogam3;
+using Ogam3.Lsp;
 using Ogam3.Utils;
 
 namespace TestEvaluator {
     class Program {
         static void Main(string[] args) { // TODO
-            //var rr = "(defmacro (if2 c t f) (if c t f))".O3Eval();
-            //rr = "(if2 #t (display 11) (display 22))".O3Eval();
-            //"(defmacro (a body) body )".O3Eval();
-            //var rr = "(a (+ 1 2 3))".O3Eval();
+            Macro();
             Base();
             IntrnalState();
             ThreadSafe();
@@ -82,6 +80,13 @@ namespace TestEvaluator {
             return true;
         }
 
+        static bool Macro() {
+            var whenRes = "(when (> 5 1) (when #t 100500))".O3Eval();
+            var letRes = "(let ((a 1) (b 2)) (+ a b))".O3Eval();
+            var condRes = "(cond (#f 1 2) (#t 3 4) (#t 5 6))".O3Eval();
+
+            return true;
+        }
         static bool Base() {
             object result = null;
             result = "'(a . b)".O3Eval();

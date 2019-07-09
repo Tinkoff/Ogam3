@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Ogam3.Lsp.Defaults;
 
 namespace Ogam3.Lsp {
     public class VirtualMashine {

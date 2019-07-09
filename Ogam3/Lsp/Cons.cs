@@ -51,15 +51,15 @@ namespace Ogam3.Lsp {
         }
 
         private Cons _lastElement; // optimisation
-        public Cons Add(dynamic o) {
+        public Cons Add(dynamic o, bool isDot = false) {
             lock (this) {
 
-            if (_car == null && _cdr == null) {
-                _car = o;
-                return this;
-            }
+                if (_car == null && _cdr == null) {
+                    _car = o;
+                    return this;
+                }
 
-            if (_lastElement == null) _lastElement = this;
+                if (_lastElement == null) _lastElement = this;
                 while (_lastElement._cdr != null) {
                     if (_lastElement._cdr is Cons) {
                         _lastElement = _lastElement._cdr as Cons;
@@ -69,11 +69,16 @@ namespace Ogam3.Lsp {
                     }
                 }
 
-                var cndr = new Cons(o);
-                _lastElement._cdr = cndr;
-                _lastElement = cndr;
-
-                return cndr;
+                if (isDot) {
+                    _lastElement._cdr = o;
+                    return _lastElement;
+                }
+                else {
+                    var cndr = new Cons(o);
+                    _lastElement._cdr = cndr;
+                    _lastElement = cndr;
+                    return cndr;
+                }
             }
         }
 
