@@ -194,17 +194,26 @@ namespace Ogam3.Utils {
             switch (memberInfo.MemberType) {
                 case MemberTypes.Field:
                     ((FieldInfo) memberInfo).SetValue(forObject,
-                        Convert.ChangeType(value, ((FieldInfo) memberInfo).FieldType));
+                        ChangeType(value, ((FieldInfo) memberInfo).FieldType));
                     break;
-                case MemberTypes.Property:
-                    ((PropertyInfo) memberInfo).SetValue(forObject,
-                        Convert.ChangeType(value, ((PropertyInfo) memberInfo).PropertyType), null);
+                case MemberTypes.Property: 
+                        ((PropertyInfo)memberInfo).SetValue(forObject,
+                            ChangeType(value, ((PropertyInfo)memberInfo).PropertyType), null);
                     break;
                 default:
                     throw new NotImplementedException();
             }
 
             return true;
+        }
+
+        private static object ChangeType(object value, Type toType) {
+            var convertible = value as IConvertible;
+            if (convertible == null) {
+                return value;
+            }
+
+            return Convert.ChangeType(value, toType);
         }
     }
 }

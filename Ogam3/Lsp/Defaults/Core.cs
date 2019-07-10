@@ -175,6 +175,53 @@ namespace Ogam3.Lsp.Defaults {
             //"(set-member! obj 'Some 3)".O3Eval();
             //var tt = "((get-member obj 'Power) (get-member obj 'Some))".O3Eval();
 
+            Define("type", new Func<object, Type>((name) => {
+                if (name == null) {
+                    throw new Exception("Undefined name of type.");
+                }
+
+                var fullyQualifiedName = "";
+                if (name is Symbol) {
+                    fullyQualifiedName = ((Symbol) name).Name;
+                } else if (name is string) {
+                    fullyQualifiedName = (string) name;
+                }
+                else {
+                    new Exception("Expected Symbol or string");
+                }
+
+                if (string.IsNullOrWhiteSpace(fullyQualifiedName)) {
+                    throw new Exception("Undefined name of type.");
+                }
+
+                var type = Utils.Reflect.TryFindType(fullyQualifiedName);
+                if (type == null) {
+                    foreach (var asm in AppDomain.CurrentDomain.GetAssemblies()) {
+                        type = asm.GetType(fullyQualifiedName);
+                        if (type != null) {
+                            break;
+                        }
+                    }
+
+                    if (type == null) {
+                        throw new Exception($"The '{fullyQualifiedName}' class not found.");
+                    }
+                }
+
+                return type;
+            }));
+
+            Define("create-instance", new Func<Type, Params, dynamic>((type, args) => {
+                if (type == null) {
+                    throw new Exception($"Undefined type.");
+                }
+
+                //var ctors = type.GetConstructor(args.Select(a => a.GetType() as Type).ToArray());
+                return Activator.CreateInstance(type, args.ToArray());
+            }));
+
+
+
             Define("new", new Func<Params, dynamic>((par) => {
                 if (!par.Any()) {
                     throw new Exception("Arity");
@@ -219,7 +266,7 @@ namespace Ogam3.Lsp.Defaults {
                     throw new Exception("MemberName is empty");
                 }
 
-                return Ogam3.Utils.Reflect.GetPropValue(inst, memberName);
+                return Utils.Reflect.GetPropValue(inst, memberName);
             }));
 
             Define("set-member!", new Func<object, object, object, dynamic>((inst, name, value) => {
@@ -236,7 +283,45 @@ namespace Ogam3.Lsp.Defaults {
                     throw new Exception("MemberName is empty");
                 }
 
-                return Ogam3.Utils.Reflect.SetPropValue(inst, memberName, value);
+                return Utils.Reflect.SetPropValue(inst, memberName, value);
+            }));
+
+            Define("get-static-member", new Func<Type, object, dynamic>((type, name) => {
+                if (type == null)
+                    return null;
+
+                var memberName = "";
+                if (name is Symbol) {
+                    memberName = (name as Symbol).Name;
+                } else if (name is string) {
+                    memberName = name as string;
+                } else
+                    throw new Exception("Expected Symbol or string");
+
+                if (string.IsNullOrWhiteSpace(memberName)) {
+                    throw new Exception("MemberName is empty");
+                }
+
+                return Utils.Reflect.GetStaticPropValue(type, memberName);
+            }));
+
+            Define("set-static-member!", new Func<Type, object, object, dynamic>((type, name, value) => {
+                if (type == null)
+                    return null;
+
+                var memberName = "";
+                if (name is Symbol) {
+                    memberName = (name as Symbol).Name;
+                } else if (name is string) {
+                    memberName = name as string;
+                } else
+                    throw new Exception("Expected Symbol or string");
+
+                if (string.IsNullOrWhiteSpace(memberName)) {
+                    throw new Exception("MemberName is empty");
+                }
+
+                return Utils.Reflect.SetStaticPropValue(type, memberName, value);
             }));
 
             Define("load-assembly", new Func<string, bool>((path) => {
