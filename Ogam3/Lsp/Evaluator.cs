@@ -40,8 +40,7 @@ namespace Ogam3.Lsp {
 
         public object EvlString(string str, EnviromentFrame env, bool isWithMacro = true) {
             if (string.IsNullOrWhiteSpace(str)) return null;
-            return EvlSeq(Reader.Read(str), isWithMacro);
-            //return VirtualMashine.Eval(Compiler.Compile(str), env);
+            return EvlSeq(Reader.Read(str), env, isWithMacro);
         }
 
         public object EvlSeq(Cons seq, EnviromentFrame env, bool isWithMacro = true) {
