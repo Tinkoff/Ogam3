@@ -168,6 +168,10 @@ namespace Ogam3.Lsp {
                 }
                 else {
                     rseq.Add(exp);
+                    var rest = o?.Cdr();
+                    if (!(rest is Cons)) {
+                        rseq.Add(rest, true);
+                    }
                 }
             }
             return rseq;
