@@ -725,6 +725,16 @@ namespace Ogam3.Frt {
             }
             AddOp(LookUp("exit").Address);
         }
+
+        public void Callback(string word, MulticastDelegate action) {
+            if (string.IsNullOrWhiteSpace(word) || word.Any(c => " \n\r\t".Any(cw => cw == c))) {
+                throw new Exception("invalid format of word");
+            }
+
+            DS.Push(action);
+            Eval($": {word} [ ' doLit , , ] invk ;");
+        }
+
         #endregion
         #region Text interpreter
         static bool IsConstant(string word) {
