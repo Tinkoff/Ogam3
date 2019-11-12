@@ -205,8 +205,15 @@ namespace Ogam3.Frt {
         }
 
         private void Execute() {
-            WP = IP;
-            IP = (int)DS.Pop();
+            var address = (int)DS.Pop();
+            if (address < Core.Count) { // eval core
+                Core[address]();        // invoke core function
+            } else {                    // eval word
+                //IP == 4;              // core word execute
+                WP = address;           // set eval address
+                DoList();               // fake doList
+                Next();                 // run evaluator
+            }
         }
 
         private void DoLit() {
