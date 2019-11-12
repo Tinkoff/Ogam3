@@ -50,6 +50,7 @@ namespace Ogam3.Frt {
         public class WordHeader {
             public int Address;
             public bool Immediate;
+            public bool IsEnable;
         }
 
         public OForth(int memorySize = 1024, TextWriter output = null) {
@@ -216,11 +217,13 @@ namespace Ogam3.Frt {
             AddHeader(ReadWord(Input));
             AddOp(LookUp("doList").Address);
             IsEvalMode = false;
+            LastWordHeader.IsEnable = false;
         }
 
         private void EndDefWord() {
             AddOp(LookUp("exit").Address);
             IsEvalMode = true;
+            LastWordHeader.IsEnable = true;
         }
 
         private void Branch() {
@@ -682,7 +685,7 @@ namespace Ogam3.Frt {
         #region Helpers
         private WordHeader LookUp(string word) {
             if (Entries.ContainsKey(word)) {
-                return Entries[word].Last();
+                return Entries[word].Last(e => e.IsEnable);
             }
 
             return null;
@@ -697,7 +700,7 @@ namespace Ogam3.Frt {
                 Entries[word] = set;
             }
 
-            LastWordHeader = new WordHeader() { Address = entry, Immediate = immediate };
+            LastWordHeader = new WordHeader() { Address = entry, Immediate = immediate, IsEnable = true};
             set.Add(LastWordHeader);
         }
 
