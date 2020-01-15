@@ -38,7 +38,7 @@ namespace Ogam3.Network.Tcp {
 
         private readonly QueryInterface _queryInterface;
 
-        public OTcpServer(int port, Evaluator evaluator = null) {
+        public OTcpServer(int port, Evaluator evaluator = null, bool isAutoStartListener = true) {
             Evaluator = evaluator ?? new Evaluator();
 
             _queryInterface = new QueryInterface();
@@ -47,12 +47,19 @@ namespace Ogam3.Network.Tcp {
             RegisterImplementation(_queryInterface);
 
             _listener = new TcpListener(IPAddress.Any, port);
-            _listener.Start();
 
             Evaluator.DefaultEnviroment.Define("get-context-tcp-client", new Func<dynamic>(() => ContexTcpClient));
 
             listerThread = new Thread(ListenerHandler);
             listerThread.IsBackground = true;
+            
+            if (isAutoStartListener) {
+                StartListener();
+            }
+        }
+
+        public void StartListener() {
+            _listener.Start();
             listerThread.Start(_listener);
         }
 
