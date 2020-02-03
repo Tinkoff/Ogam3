@@ -24,6 +24,10 @@ using System.Text;
 namespace Ogam3.Lsp {
     public static class BinFormater {
 
+        static BinFormater() {
+            InitRadHandlers();
+        }
+
         private struct Codes {
             public const byte Open  = 0x01;
             public const byte Close = 0x02;
@@ -147,241 +151,478 @@ namespace Ogam3.Lsp {
         private static byte[] XN6 = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
         private static byte[] XN7 = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
+        private struct ReadContext {
+            public Stack<Cons> Stack;
+            public Cons Root;
+            public bool IsDot;
+            public MemoryStream Data;
+            public SymbolTable SymbolTable;
+        }
+
+        #region subreaders
+
+        delegate ReadContext SubReaderDlg(ReadContext context);
+
+        static SubReaderDlg[] ReadHandlers = new SubReaderDlg[0x4b];
+
+        static void InitRadHandlers() {
+            for(var i = 0; i < ReadHandlers.Length; i++) {
+                ReadHandlers[i] = SRUndef;
+            }
+
+            ReadHandlers[Codes.Open]                = SROpen;
+            ReadHandlers[Codes.Close]               = SRClose;
+            ReadHandlers[Codes.Dot]                 = SRDot;
+            ReadHandlers[Codes.Integer16_16]        = SRInteger16_16;
+            ReadHandlers[Codes.Integer16_8]         = SRInteger16_8;
+            ReadHandlers[Codes.Integer16_8_Negate]  = SRInteger16_8_Negate;
+            ReadHandlers[Codes.Integer16_0]         = SRInteger16_0;
+            ReadHandlers[Codes.Integer16_16_u]      = SRInteger16_16_u;
+            ReadHandlers[Codes.Integer16_8_u]       = SRInteger16_8_u;
+            ReadHandlers[Codes.Integer16_0_u]       = SRInteger16_0_u;
+            ReadHandlers[Codes.Integer32_32]        = SRInteger32_32;
+            ReadHandlers[Codes.Integer32_24]        = SRInteger32_24;
+            ReadHandlers[Codes.Integer32_24_Negate] = SRInteger32_24_Negate;
+            ReadHandlers[Codes.Integer32_16]        = SRInteger32_16;
+            ReadHandlers[Codes.Integer32_16_Negate] = SRInteger32_16_Negate;
+            ReadHandlers[Codes.Integer32_8]         = SRInteger32_8;
+            ReadHandlers[Codes.Integer32_8_Negate]  = SRInteger32_8_Negate;
+            ReadHandlers[Codes.Integer32_0]         = SRInteger32_0;
+            ReadHandlers[Codes.Integer32_32_u]      = SRInteger32_32_u;
+            ReadHandlers[Codes.Integer32_24_u]      = SRInteger32_24_u;
+            ReadHandlers[Codes.Integer32_16_u]      = SRInteger32_16_u;
+            ReadHandlers[Codes.Integer32_8_u]       = SRInteger32_8_u;
+            ReadHandlers[Codes.Integer32_0_u]       = SRInteger32_0_u;
+            ReadHandlers[Codes.Integer64_64]        = SRInteger64_64;
+            ReadHandlers[Codes.Integer64_56]        = SRInteger64_56;
+            ReadHandlers[Codes.Integer64_56_Negate] = SRInteger64_56_Negate;
+            ReadHandlers[Codes.Integer64_48]        = SRInteger64_48;
+            ReadHandlers[Codes.Integer64_48_Negate] = SRInteger64_48_Negate;
+            ReadHandlers[Codes.Integer64_40]        = SRInteger64_40;
+            ReadHandlers[Codes.Integer64_40_Negate] = SRInteger64_40_Negate;
+            ReadHandlers[Codes.Integer64_32]        = SRInteger64_32;
+            ReadHandlers[Codes.Integer64_32_Negate] = SRInteger64_32_Negate;
+            ReadHandlers[Codes.Integer64_24]        = SRInteger64_24;
+            ReadHandlers[Codes.Integer64_24_Negate] = SRInteger64_24_Negate;
+            ReadHandlers[Codes.Integer64_16]        = SRInteger64_16;
+            ReadHandlers[Codes.Integer64_16_Negate] = SRInteger64_16_Negate;
+            ReadHandlers[Codes.Integer64_8]         = SRInteger64_8;
+            ReadHandlers[Codes.Integer64_8_Negate]  = SRInteger64_8_Negate;
+            ReadHandlers[Codes.Integer64_0]         = SRInteger64_0;
+            ReadHandlers[Codes.Integer64_64_u]      = SRInteger64_64_u;
+            ReadHandlers[Codes.Integer64_56_u]      = SRInteger64_56_u;
+            ReadHandlers[Codes.Integer64_48_u]      = SRInteger64_48_u;
+            ReadHandlers[Codes.Integer64_40_u]      = SRInteger64_40_u;
+            ReadHandlers[Codes.Integer64_32_u]      = SRInteger64_32_u;
+            ReadHandlers[Codes.Integer64_24_u]      = SRInteger64_24_u;
+            ReadHandlers[Codes.Integer64_16_u]      = SRInteger64_16_u;
+            ReadHandlers[Codes.Integer64_8_u]       = SRInteger64_8_u;
+            ReadHandlers[Codes.Integer64_0_u]       = SRInteger64_0_u;
+            ReadHandlers[Codes.Byte]                = SRByte;
+            ReadHandlers[Codes.BoolTrue]            = SRBoolTrue;
+            ReadHandlers[Codes.BoolFalse]           = SRBoolFalse;
+            ReadHandlers[Codes.Charter8]            = SRCharter8;
+            ReadHandlers[Codes.Charter32]           = SRCharter32;
+            ReadHandlers[Codes.Float32]             = SRFloat32;
+            ReadHandlers[Codes.Float64]             = SRFloat64;
+            ReadHandlers[Codes.SymbolShort]         = SRSymbolShort;
+            ReadHandlers[Codes.SymbolLong]          = SRSymbolLong;
+            ReadHandlers[Codes.SymbolIndex]         = SRSymbolIndex;
+            ReadHandlers[Codes.String32_32]         = SRString32_32;
+            ReadHandlers[Codes.String32_24]         = SRString32_24;
+            ReadHandlers[Codes.String32_16]         = SRString32_16;
+            ReadHandlers[Codes.String32_8]          = SRString32_8;
+            ReadHandlers[Codes.String32_0]          = SRString32_0;
+            ReadHandlers[Codes.StreamShort]         = SRStreamShort;
+            ReadHandlers[Codes.Null]                = SRNull;
+            ReadHandlers[Codes.DateTime]            = SRDateTime;
+            ReadHandlers[Codes.StreamLong]          = SRStreamLong;
+            ReadHandlers[Codes.SpecialMessage]      = SRSpecialMessage;
+        }
+
+        static ReadContext SROpen(ReadContext context) {
+            var nod = new Cons();
+            context.Stack.Peek().Add(nod);
+            context.Stack.Push(nod);
+
+            return context;
+        }
+
+        static ReadContext SRClose(ReadContext context) {
+            context.Stack.Pop();
+            return context;
+        }
+
+        static ReadContext SRDot(ReadContext context) {
+            context.IsDot = true;
+
+            var b = context.Data.ReadByte();
+
+            while(b == Codes.Dot) { // skip dodts
+                b = context.Data.ReadByte();
+            }
+
+            if (b <= 0) { return context; } // EOS
+
+            context = ReadHandlers[b](context);
+
+            context.IsDot = false;
+
+            return context;
+        }
+
+        static ReadContext SRInteger16_16(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt16(R(context.Data, 2), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger16_8(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt16(R(context.Data, 1, X1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger16_8_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt16(R(context.Data, 1, XN1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger16_0(ReadContext context) {
+            context.Stack.Peek().Add((short)0, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger16_16_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt16(R(context.Data, 2), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger16_8_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt16(R(context.Data, 1, X1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger16_0_u(ReadContext context) {
+            context.Stack.Peek().Add((ushort)0, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_32(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt32(R(context.Data, 4), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_24(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt32(R(context.Data, 3, X1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_24_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt32(R(context.Data, 3, XN1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_16(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt32(R(context.Data, 2, X2), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_16_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt32(R(context.Data, 2, XN2), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_8(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt32(R(context.Data, 1, X3), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_8_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt32(R(context.Data, 1, XN3), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_0(ReadContext context) {
+            context.Stack.Peek().Add(0, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_32_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt32(R(context.Data, 4), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_24_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt32(R(context.Data, 3, X1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_16_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt32(R(context.Data, 2, X2), 0), context.IsDot);
+            return context;
+        }
+        static ReadContext SRInteger32_8_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt32(R(context.Data, 1, X3), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger32_0_u(ReadContext context) {
+            context.Stack.Peek().Add(0u, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_64(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 8), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_56(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 7, X1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_56_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 7, XN1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_48(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 6, X2), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_48_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 6, XN2), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_40(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 5, X3), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_40_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 5, XN3), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_32(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 4, X4), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_32_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 4, XN4), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_24(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 3, X5), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_24_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 3, XN5), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_16(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 2, X6), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_16_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 2, XN6), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_8(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 1, X7), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_8_Negate(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToInt64(R(context.Data, 1, XN7), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_0(ReadContext context) {
+            context.Stack.Peek().Add(0L, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_64_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt64(R(context.Data, 8), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_56_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt64(R(context.Data, 7, X1), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_48_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt64(R(context.Data, 6, X2), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_40_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt64(R(context.Data, 5, X3), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_32_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt64(R(context.Data, 4, X4), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_24_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt64(R(context.Data, 3, X5), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_16_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt64(R(context.Data, 2, X6), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_8_u(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToUInt64(R(context.Data, 1, X7), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRInteger64_0_u(ReadContext context) {
+            context.Stack.Peek().Add(0UL, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRByte(ReadContext context) {
+            context.Stack.Peek().Add(context.Data.ReadByte(), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRBoolTrue(ReadContext context) {
+            context.Stack.Peek().Add(true, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRBoolFalse(ReadContext context) {
+            context.Stack.Peek().Add(false, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRCharter8(ReadContext context) {
+            context.Stack.Peek().Add((char)context.Data.ReadByte(), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRCharter32(ReadContext context) {
+            context.Stack.Peek().Add(Encoding.UTF32.GetChars(R(context.Data, 4)).FirstOrDefault(), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRFloat32(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToSingle(R(context.Data, 4), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRFloat64(ReadContext context) {
+            context.Stack.Peek().Add(BitConverter.ToDouble(R(context.Data, 8), 0), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRSymbolShort(ReadContext context) {
+            context.Stack.Peek().Add(new Symbol(Encoding.UTF8.GetString(R(context.Data, context.Data.ReadByte()))), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRSymbolLong(ReadContext context) {
+            context.Stack.Peek().Add(new Symbol(Encoding.UTF8.GetString(R(context.Data, BitConverter.ToInt16(R(context.Data, 2), 0)))), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRSymbolIndex(ReadContext context) {
+            if (context.SymbolTable != null) {
+                context.Stack.Peek().Add(new Symbol(context.SymbolTable.Get(BitConverter.ToUInt16(R(context.Data, 2), 0))), context.IsDot);
+            } else {
+                R(context.Data, 2);
+                context.Stack.Peek().Add(new Symbol("<undefined-symbol-index>"), context.IsDot);
+            }
+            return context;
+        }
+
+        static ReadContext SRString32_32(ReadContext context) {
+            context.Stack.Peek().Add(Encoding.UTF8.GetString(R(context.Data, BitConverter.ToInt32(R(context.Data, 4), 0))), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRString32_24(ReadContext context) {
+            context.Stack.Peek().Add(Encoding.UTF8.GetString(R(context.Data, BitConverter.ToInt32(R(context.Data, 3, X1), 0))), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRString32_16(ReadContext context) {
+            context.Stack.Peek().Add(Encoding.UTF8.GetString(R(context.Data, BitConverter.ToUInt16(R(context.Data, 2), 0))), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRString32_8(ReadContext context) {
+            context.Stack.Peek().Add(Encoding.UTF8.GetString(R(context.Data, context.Data.ReadByte())), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRString32_0(ReadContext context) {
+            context.Stack.Peek().Add(string.Empty, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRStreamShort(ReadContext context) {
+            context.Stack.Peek().Add(new MemoryStream(R(context.Data, BitConverter.ToInt32(R(context.Data, 4), 0))), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRNull(ReadContext context) {
+            context.Stack.Peek().Add(null, context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRDateTime(ReadContext context) {
+            context.Stack.Peek().Add(DateTime.FromBinary(BitConverter.ToInt64(R(context.Data, 8), 0)), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRStreamLong(ReadContext context) {
+            throw new Exception("Not supported");
+        }
+
+        static ReadContext SRSpecialMessage(ReadContext context) {
+            context.Stack.Peek().Add(new SpecialMessage(Encoding.UTF8.GetString(R(context.Data, BitConverter.ToInt32(R(context.Data, 4), 0)))), context.IsDot);
+            return context;
+        }
+
+        static ReadContext SRUndef(ReadContext context) {
+            throw new Exception("Bad data format!");
+        }
+
+        #endregion
+
         public static Cons Read(MemoryStream data, SymbolTable symbolTable) {
             var stack = new Stack<Cons>();
             var root = new Cons();
             stack.Push(root);
-            var isDot = false; // подумать
 
-            void Set(object o) {
-                stack.Peek().Add(o, isDot);
-                isDot = false;
-            }
+            var context = new ReadContext() {
+                Stack = stack,
+                Root = root,
+                Data = data,
+                SymbolTable = symbolTable
+            };
 
             while (true) {
                 var b = data.ReadByte();
 
-                if (b <= 0) {return root;} // EOS
+                if (b <= 0) { return root; } // EOS
 
-                switch (b) {
-                    case Codes.Open: {
-                        var nod = new Cons();
-                        stack.Peek().Add(nod);
-                        stack.Push(nod);
-                        break;
-                    }
-                    case Codes.Close:
-                        stack.Pop();
-                        break;
-                    case Codes.Dot:
-                        isDot = true;
-                        break;
-                        //FIXED SIZE
-                    case Codes.Integer16_16:
-                        Set(BitConverter.ToInt16(R(data, 2), 0));
-                        break;
-                    case Codes.Integer16_8:
-                        Set(BitConverter.ToInt16(R(data, 1, X1), 0));
-                        break;
-                    case Codes.Integer16_8_Negate:
-                        Set(BitConverter.ToInt16(R(data, 1, XN1), 0));
-                        break;
-                    case Codes.Integer16_0:
-                        Set((short)0);
-                        break;
-                    case Codes.Integer16_16_u:
-                        Set(BitConverter.ToUInt16(R(data, 2), 0));
-                        break;
-                    case Codes.Integer16_8_u:
-                        Set(BitConverter.ToUInt16(R(data, 1, X1), 0));
-                        break;
-                    case Codes.Integer16_0_u:
-                        Set((ushort)0);
-                        break;
-                    case Codes.Integer32_32:
-                        Set(BitConverter.ToInt32(R(data, 4), 0));
-                        break;
-                    case Codes.Integer32_24:
-                        Set(BitConverter.ToInt32(R(data, 3, X1), 0));
-                        break;
-                    case Codes.Integer32_24_Negate:
-                        Set(BitConverter.ToInt32(R(data, 3, XN1), 0));
-                        break;
-                    case Codes.Integer32_16:
-                        Set(BitConverter.ToInt32(R(data, 2, X2), 0));
-                        break;
-                    case Codes.Integer32_16_Negate:
-                        Set(BitConverter.ToInt32(R(data, 2, XN2), 0));
-                        break;
-                    case Codes.Integer32_8:
-                        Set(BitConverter.ToInt32(R(data, 1, X3), 0));
-                        break;
-                    case Codes.Integer32_8_Negate:
-                        Set(BitConverter.ToInt32(R(data, 1, XN3), 0));
-                        break;
-                    case Codes.Integer32_0:
-                        Set(0);
-                        break;
-                    case Codes.Integer32_32_u:
-                        Set(BitConverter.ToUInt32(R(data, 4), 0));
-                        break;
-                    case Codes.Integer32_24_u:
-                        Set(BitConverter.ToUInt32(R(data, 3, X1), 0));
-                        break;
-                    case Codes.Integer32_16_u:
-                        Set(BitConverter.ToUInt32(R(data, 2, X2), 0));
-                        break;
-                    case Codes.Integer32_8_u:
-                        Set(BitConverter.ToUInt32(R(data, 1, X3), 0));
-                        break;
-                    case Codes.Integer32_0_u:
-                        Set(0u);
-                        break;
-                    case Codes.Integer64_64:
-                        Set(BitConverter.ToInt64(R(data, 8), 0));
-                        break;
-                    case Codes.Integer64_56:
-                        Set(BitConverter.ToInt64(R(data, 7, X1), 0));
-                        break;
-                    case Codes.Integer64_56_Negate:
-                        Set(BitConverter.ToInt64(R(data, 7, XN1), 0));
-                        break;
-                    case Codes.Integer64_48:
-                        Set(BitConverter.ToInt64(R(data, 6, X2), 0));
-                        break;
-                    case Codes.Integer64_48_Negate:
-                        Set(BitConverter.ToInt64(R(data, 6, XN2), 0));
-                        break;
-                    case Codes.Integer64_40:
-                        Set(BitConverter.ToInt64(R(data, 5, X3), 0));
-                        break;
-                    case Codes.Integer64_40_Negate:
-                        Set(BitConverter.ToInt64(R(data, 5, XN3), 0));
-                        break;
-                    case Codes.Integer64_32:
-                        Set(BitConverter.ToInt64(R(data, 4, X4), 0));
-                        break;
-                    case Codes.Integer64_32_Negate:
-                        Set(BitConverter.ToInt64(R(data, 4, XN4), 0));
-                        break;
-                    case Codes.Integer64_24:
-                        Set(BitConverter.ToInt64(R(data, 3, X5), 0));
-                        break;
-                    case Codes.Integer64_24_Negate:
-                        Set(BitConverter.ToInt64(R(data, 3, XN5), 0));
-                        break;
-                    case Codes.Integer64_16:
-                        Set(BitConverter.ToInt64(R(data, 2, X6), 0));
-                        break;
-                    case Codes.Integer64_16_Negate:
-                        Set(BitConverter.ToInt64(R(data, 2, XN6), 0));
-                        break;
-                    case Codes.Integer64_8:
-                        Set(BitConverter.ToInt64(R(data, 1, X7), 0));
-                        break;
-                    case Codes.Integer64_8_Negate:
-                        Set(BitConverter.ToInt64(R(data, 1, XN7), 0));
-                        break;
-                    case Codes.Integer64_0:
-                        Set(0L);
-                        break;
-                    case Codes.Integer64_64_u:
-                        Set(BitConverter.ToUInt64(R(data, 8), 0));
-                        break;
-                    case Codes.Integer64_56_u:
-                        Set(BitConverter.ToUInt64(R(data, 7, X1), 0));
-                        break;
-                    case Codes.Integer64_48_u:
-                        Set(BitConverter.ToUInt64(R(data, 6, X2), 0));
-                        break;
-                    case Codes.Integer64_40_u:
-                        Set(BitConverter.ToUInt64(R(data, 5, X3), 0));
-                        break;
-                    case Codes.Integer64_32_u:
-                        Set(BitConverter.ToUInt64(R(data, 4, X4), 0));
-                        break;
-                    case Codes.Integer64_24_u:
-                        Set(BitConverter.ToUInt64(R(data, 3, X5), 0));
-                        break;
-                    case Codes.Integer64_16_u:
-                        Set(BitConverter.ToUInt64(R(data, 2, X6), 0));
-                        break;
-                    case Codes.Integer64_8_u:
-                        Set(BitConverter.ToUInt64(R(data, 1, X7), 0));
-                        break;
-                    case Codes.Integer64_0_u:
-                        Set(0UL);
-                        break;
-                    case Codes.Byte:
-                        Set(data.ReadByte());
-                        break;
-                    case Codes.BoolTrue:
-                        Set(true);
-                        break;
-                    case Codes.BoolFalse:
-                        Set(false);
-                        break;
-                    case Codes.Charter8:
-                        Set((char)data.ReadByte());
-                        break;
-                    case Codes.Charter32:
-                        Set(Encoding.UTF32.GetChars(R(data, 4)).FirstOrDefault());
-                        break;
-                    case Codes.Float32:
-                        Set(BitConverter.ToSingle(R(data, 4), 0));
-                        break;
-                    case Codes.Float64:
-                        Set(BitConverter.ToDouble(R(data, 8), 0));
-                        break;
-                        //FLOAT SIZE
-                    case Codes.SymbolShort:
-                        Set(new Symbol(Encoding.UTF8.GetString(R(data, data.ReadByte()))));
-                        break;
-                    case Codes.SymbolLong:
-                        Set(new Symbol(Encoding.UTF8.GetString(R(data, BitConverter.ToInt16(R(data, 2), 0)))));
-                        break;
-                    case Codes.SymbolIndex:
-                        if (symbolTable != null) {
-                            Set(new Symbol(symbolTable.Get(BitConverter.ToUInt16(R(data, 2), 0))));
-                        }
-                        else {
-                            R(data, 2);
-                            Set(new Symbol("<undefined-symbol-index>"));
-                        }
-
-                        break;
-                    case Codes.String32_32:
-                        Set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0))));
-                        break;
-                    case Codes.String32_24:
-                        Set(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 3, X1), 0))));
-                        break;
-                    case Codes.String32_16:
-                        Set(Encoding.UTF8.GetString(R(data, BitConverter.ToUInt16(R(data, 2), 0))));
-                        break;
-                    case Codes.String32_8:
-                        Set(Encoding.UTF8.GetString(R(data, data.ReadByte())));
-                        break;
-                    case Codes.String32_0:
-                        Set("");
-                        break;
-                    case Codes.StreamShort:
-                        Set(new MemoryStream(R(data, BitConverter.ToInt32(R(data, 4), 0))));
-                        break;
-                    case Codes.Null:
-                        Set(null);
-                        break;
-                    case Codes.DateTime:
-                        Set(DateTime.FromBinary(BitConverter.ToInt64(R(data, 8), 0)));
-                        break;
-                    case Codes.StreamLong: // TODO
-                        throw new Exception("Not supported");
-                    case Codes.SpecialMessage:
-                        Set(new SpecialMessage(Encoding.UTF8.GetString(R(data, BitConverter.ToInt32(R(data, 4), 0)))));
-                        break;
-                    default:
-                        throw new Exception("Bad data format!");
-                }
+                context = ReadHandlers[b](context);
             }
         }
 
