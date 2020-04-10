@@ -69,7 +69,7 @@ namespace Ogam3.Lsp {
                                 curent = stack.Peek();
                             }
                         }
-                        else if (" \n\r\t".Any(ch => ch == c)) {
+                        else if (" \n\r\t\u200B".Any(ch => ch == c)) {
                             if (!string.IsNullOrWhiteSpace(word)) {
                                 if (word == ".") {
                                     isDot = true;
