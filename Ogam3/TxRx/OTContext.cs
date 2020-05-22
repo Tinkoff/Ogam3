@@ -29,7 +29,7 @@ namespace Ogam3.TxRx {
         public SymbolTable SymbolTable;
         public Action<OTContext> Callback;
         public TcpClient TcpClient;
-        public ReClient2 ReClient;
+        public ReClient ReClient;
         public Evaluator Evaluator;
         public DataTransfer DataTransfer;
     }

@@ -89,7 +89,7 @@ namespace Ogam3.Network.TCP {
                     Context = rap, 
                     Data = data, 
                     TcpClient = client,
-                    ReClient = new ReClient2(server, Evaluator, _queryInterface),
+                    ReClient = new ReClient(server, Evaluator, _queryInterface),
                     Evaluator = Evaluator,
                     DataTransfer = server,
                     Callback = HandleRequest
@@ -153,10 +153,10 @@ namespace Ogam3.Network.TCP {
         public static OTContext Contex => (OTContext)GetContextObj(ContextId);
         public static TcpClient ContexTcpClient => Contex.TcpClient;
         public static IPEndPoint ContextTcpEndPoint => (IPEndPoint)ContexTcpClient?.Client?.RemoteEndPoint;
-        public static ReClient2 ContexReClient => Contex.ReClient;
+        public static ReClient ContexReClient => Contex.ReClient;
     }
 
-    public class ReClient2 : ISomeClient {
+    public class ReClient : ISomeClient {
         public readonly DataTransfer DataTransfer;
         public readonly Evaluator Evaluator;
 
@@ -168,7 +168,7 @@ namespace Ogam3.Network.TCP {
             ConnectionError?.Invoke(ex);
         }
 
-        public ReClient2(DataTransfer dataTransfer, Evaluator evaluator, QueryInterface queryInterface) {
+        public ReClient(DataTransfer dataTransfer, Evaluator evaluator, QueryInterface queryInterface) {
             DataTransfer = dataTransfer;
             Evaluator = evaluator;
             DataTransfer.ConnectionError += OnConnectionError;
