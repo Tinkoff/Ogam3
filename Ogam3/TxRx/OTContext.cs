@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using static Ogam3.Network.TCP.OTcpServer;
 
 namespace Ogam3.TxRx {
     public class OTContext {

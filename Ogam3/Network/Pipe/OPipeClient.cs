@@ -123,7 +123,7 @@ namespace Ogam3.Network.Pipe {
                 }
             };
 
-            _transfering.StartReceiver(data => OTcpServer.DataHandler(_evaluator, data, _symbolTable));
+            //_transfering.StartReceiver(data => OTcpServer.DataHandler(_evaluator, data, _symbolTable));
 
             _sendSync.Unlock();
         }

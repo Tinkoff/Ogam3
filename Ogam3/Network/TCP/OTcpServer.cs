@@ -68,7 +68,7 @@ namespace Ogam3.Network.TCP {
             var stx = new SingleThreadedSynchronizationContext();
 
             // event loop
-            new Thread(() => { stx.StartEventLoop(); }) { IsBackground = true}.Start();
+            new Thread(() => { stx.StartEventLoop(); }) { IsBackground = true }.Start();
 
             var listener = (TcpListener)o;
             while (true) {
@@ -86,8 +86,8 @@ namespace Ogam3.Network.TCP {
             server.ReceivedData += (rap, data) => {
                 //Console.WriteLine("Main Thread: {0}", Thread.CurrentThread.ManagedThreadId);
                 Actors.EnqueueData(new OTContext() { // Handle in other thread
-                    Context = rap, 
-                    Data = data, 
+                    Context = rap,
+                    Data = data,
                     TcpClient = client,
                     ReClient = new ReClient(server, Evaluator, _queryInterface),
                     Evaluator = Evaluator,
@@ -154,46 +154,46 @@ namespace Ogam3.Network.TCP {
         public static TcpClient ContexTcpClient => Contex.TcpClient;
         public static IPEndPoint ContextTcpEndPoint => (IPEndPoint)ContexTcpClient?.Client?.RemoteEndPoint;
         public static ReClient ContexReClient => Contex.ReClient;
-    }
 
-    public class ReClient : ISomeClient {
-        public readonly DataTransfer DataTransfer;
-        public readonly Evaluator Evaluator;
+        public class ReClient : ISomeClient {
+            public readonly DataTransfer DataTransfer;
+            public readonly Evaluator Evaluator;
 
-        public event Action<Exception> ConnectionError;
+            public event Action<Exception> ConnectionError;
 
-        private QueryInterface _queryInterface;
+            private QueryInterface _queryInterface;
 
-        protected virtual void OnConnectionError(Exception ex) {
-            ConnectionError?.Invoke(ex);
-        }
-
-        public ReClient(DataTransfer dataTransfer, Evaluator evaluator, QueryInterface queryInterface) {
-            DataTransfer = dataTransfer;
-            Evaluator = evaluator;
-            DataTransfer.ConnectionError += OnConnectionError;
-            _queryInterface = queryInterface;
-        }
-
-        public T CreateProxy<T>() {
-            return (T)RemoteCallGenertor.CreateTcpCaller(typeof(T), this);
-        }
-
-        protected void OnSpecialMessageEvt(SpecialMessage sm, object call) {
-            SpecialMessageEvt?.Invoke(sm, call);
-        }
-
-        public event Action<SpecialMessage, object> SpecialMessageEvt;
-
-        public object Call(object seq) {
-            var resp = BinFormater.Read(new MemoryStream(DataTransfer.Send(BinFormater.Write(seq, _queryInterface.GetSymbolTable()).ToArray())), _queryInterface.GetSymbolTable());
-
-            if (resp.Car() is SpecialMessage) {
-                OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);
-                return null;
+            protected virtual void OnConnectionError(Exception ex) {
+                ConnectionError?.Invoke(ex);
             }
 
-            return resp?.Car();
+            public ReClient(DataTransfer dataTransfer, Evaluator evaluator, QueryInterface queryInterface) {
+                DataTransfer = dataTransfer;
+                Evaluator = evaluator;
+                DataTransfer.ConnectionError += OnConnectionError;
+                _queryInterface = queryInterface;
+            }
+
+            public T CreateProxy<T>() {
+                return (T)RemoteCallGenertor.CreateTcpCaller(typeof(T), this);
+            }
+
+            protected void OnSpecialMessageEvt(SpecialMessage sm, object call) {
+                SpecialMessageEvt?.Invoke(sm, call);
+            }
+
+            public event Action<SpecialMessage, object> SpecialMessageEvt;
+
+            public object Call(object seq) {
+                var resp = BinFormater.Read(new MemoryStream(DataTransfer.Send(BinFormater.Write(seq, _queryInterface.GetSymbolTable()).ToArray())), _queryInterface.GetSymbolTable());
+
+                if (resp.Car() is SpecialMessage) {
+                    OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);
+                    return null;
+                }
+
+                return resp?.Car();
+            }
         }
     }
 }

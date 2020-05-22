@@ -31,8 +31,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataBase", "Examples\DataBa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestForth", "Tests\TestForth\TestForth.csproj", "{B029B691-557C-4F3A-9231-6ABD4C0C1919}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SingleThreadTcp", "Examples\Tcp\SingleThreadTcp\SingleThreadTcp.csproj", "{FA9223CC-8D61-4216-8E0F-4DB15460BB78}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,10 +77,6 @@ Global
 		{B029B691-557C-4F3A-9231-6ABD4C0C1919}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B029B691-557C-4F3A-9231-6ABD4C0C1919}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B029B691-557C-4F3A-9231-6ABD4C0C1919}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FA9223CC-8D61-4216-8E0F-4DB15460BB78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FA9223CC-8D61-4216-8E0F-4DB15460BB78}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FA9223CC-8D61-4216-8E0F-4DB15460BB78}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FA9223CC-8D61-4216-8E0F-4DB15460BB78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -99,7 +93,6 @@ Global
 		{5A76533C-9D02-48B1-BB07-B7C7617CD895} = {927711C4-032D-4714-B0CD-65A5F480BCDE}
 		{3CA3814C-9961-4564-8564-F0C2F9428554} = {A9204EF7-6FDC-4A39-A5DF-79989788D50D}
 		{B029B691-557C-4F3A-9231-6ABD4C0C1919} = {5062EB51-B061-4777-AB5B-84F87AD8D77F}
-		{FA9223CC-8D61-4216-8E0F-4DB15460BB78} = {C194E246-25DD-4660-B635-5882233792C6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4542CFE0-FDC3-4AD2-A34F-DE53B310BE28}

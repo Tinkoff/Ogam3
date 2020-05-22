@@ -104,7 +104,6 @@
     <Compile Include="TxRx\DataTransfer.cs" />
     <Compile Include="TxRx\OTContext.cs" />
     <Compile Include="TxRx\Package.cs" />
-    <Compile Include="TxRx\Transmitter.cs" />
     <Compile Include="Utils\DbObjectBase.cs" />
     <Compile Include="Utils\Reflect.cs" />
     <Compile Include="Utils\SGuid.cs" />

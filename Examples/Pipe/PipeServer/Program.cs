@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using CommonInterface;
 using Ogam3.Network.Pipe;
 using Ogam3.Network.Tcp;
+using Ogam3.Network.TCP;
 
 namespace PipeServer {
     class Program {

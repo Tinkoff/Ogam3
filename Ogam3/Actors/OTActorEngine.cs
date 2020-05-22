@@ -49,7 +49,7 @@ namespace Ogam3.Actors {
 
                         _threadBazuka.Shot(() => {
                             context.Callback(context);
-                        }
+                        });
 
                     } catch(Exception e) {
                         Console.WriteLine(e);

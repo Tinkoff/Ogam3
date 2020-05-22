@@ -72,7 +72,7 @@ namespace Ogam3.Network.Pipe {
 
             server.StartReceiver(data => {
                 //SetContextObj(ContextTcpClientId, client); // TODO single set
-                SetContextObj(ReClientId, new OTcpServer.ReClient(server, Evaluator, _queryInterface)); // TODO single set
+                //SetContextObj(ReClientId, new OTcpServer.ReClient(server, Evaluator, _queryInterface)); // TODO single set
 
                 return DataHandler(Evaluator, data, _queryInterface.GetSymbolTable());
             });
