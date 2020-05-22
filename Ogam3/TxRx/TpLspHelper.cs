@@ -69,7 +69,6 @@ namespace Ogam3.TxRx {
             } else if (wholeQuantCount == 0) {
                 yield return BuildPackageX(data, rap, 0, (uint)data.Length, quantId);
             }
-
         }
 
         private static byte[] CutDataQuant(byte[] data, uint start, uint length) {
@@ -150,11 +149,11 @@ namespace Ogam3.TxRx {
 
                 if (pkg == null) break;
 
-                yield return pkg.Value;
+                yield return pkg;
             }
         }
 
-        private static TpLspS? ReadNextPakg(Stream stream) {
+        private static TpLspS ReadNextPakg(Stream stream) {
             if (!stream.CanRead) return null;
 
             if (stream is NetworkStream) {

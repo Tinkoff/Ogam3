@@ -1,48 +1,46 @@
-﻿/*
- * Copyright © 2018 Tinkoff Bank
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-using System;
-using System.IO;
-using System.Net.Sockets;
-using System.Threading;
-using Ogam3.Lsp;
+﻿using Ogam3.Lsp;
 using Ogam3.Lsp.Generators;
-using Ogam3.Network.TCP;
+using Ogam3.Network.Tcp;
 using Ogam3.TxRx;
 using Ogam3.Utils;
+using Ogam3.Actors;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.IO;
+using System.Net;
 
-namespace Ogam3.Network.Tcp {
-    public class OTcpClient : ISomeClient, IDisposable{
+namespace Ogam3.Network.TCP {
+    public class OTcpClient : ISomeClient, IDisposable {
         public string Host;
         public int Port;
 
         public TcpClient ClientTcp;
-        private Transfering _transfering;
-        public uint BufferSize = 1048576;
+        private DataTransfer _dataTransfer;
         public NetworkStream Stream;
         private readonly Evaluator _evaluator;
 
-        private readonly Synchronizer _connSync = new Synchronizer(true);
+        public static Action<string> Log = Console.WriteLine;
+
         private readonly Synchronizer _sendSync = new Synchronizer(true);
 
         private readonly IQueryInterface _serverQueryInterfaceProxy;
         private SymbolTable _symbolTable;
         private bool _isKeepConnection = true;
 
-        public OTcpClient(string host, int port, Action connectionStabilised = null,  Evaluator evaluator = null) {
+        public Action ConnectionStabilised;
+
+        public event Action<Exception> ConnectionError;
+
+        public OTActorEngine Actors;
+
+        public bool IsConnected { get; private set; }
+
+        public OTcpClient(string host, int port, Action connectionStabilised = null, Evaluator evaluator = null) {
             Host = host;
             Port = port;
             ConnectionStabilised = connectionStabilised;
@@ -51,14 +49,21 @@ namespace Ogam3.Network.Tcp {
                 _evaluator = new Evaluator();
             }
 
+            Actors = new OTActorEngine();
+
             _serverQueryInterfaceProxy = CreateProxy<IQueryInterface>();
 
             new Thread(() => {
                 while (_isKeepConnection) {
-                    ConnectServer();
-                    _connSync.Wait();
+                    if (IsConnected) {
+                        _dataTransfer.WriteData(new byte[0], DataTransfer.pingRap);
+                        Thread.Sleep(15000);
+                    } else {
+                        ConnectServer();
+                        IsConnected = true;
+                    }
                 }
-            }) {IsBackground = true}.Start();
+            }) { IsBackground = true }.Start();
 
             // enqueue sybmbol table call
             _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
@@ -68,90 +73,105 @@ namespace Ogam3.Network.Tcp {
             return (T)RemoteCallGenertor.CreateTcpCaller(typeof(T), this);
         }
 
-        public void RegisterImplementation(object instanceOfImplementation) {
-            ClassRegistrator.Register(_evaluator.DefaultEnviroment, instanceOfImplementation);
-        }
-
-        private TcpClient ConnectTcp() {
-            while (true) {
-                try {
-                    ClientTcp?.Close();
-                    ClientTcp = new TcpClient();
-                    ClientTcp.Connect(Host, Port);
-
-                    break; // connection success
-                }
-                catch (Exception) {
-                    ClientTcp?.Close();
-                    Thread.Sleep(1000); // sleep reconnection
-                }
-            }
-
-            return ClientTcp;
-        }
-
-        public Action ConnectionStabilised;
-        
-        public event Action<Exception> ConnectionError;
-
-        private void ConnectServer() {
-            var ns = new NetStream(ConnectTcp());
-
-            _transfering?.Dispose();
-            _transfering = new Transfering(ns, ns, BufferSize);
-
-            var isReconnected = false;
-
-            _transfering.ConnectionStabilised = OnConnectionStabilised + new Action(() => {
-                if (isReconnected) {
-                    _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
-                }
-                else {
-                    isReconnected = true;
-                }
-            });
-
-            _transfering.ConnectionError = ex => {
-                lock (_transfering) {
-                    // for single raction
-                    _transfering.ConnectionError = null;
-
-                    _sendSync.Lock();
-                    Console.WriteLine($"Connection ERROR {ex.Message}");
-                    OnConnectionError(ex);
-
-                    _connSync.Pulse();
-                }
-            };
-
-            _transfering.StartReceiver(data => OTcpServer.DataHandler(_evaluator, data, _symbolTable));
-
-            _sendSync.Unlock();
-        }
-
         public event Action<SpecialMessage, object> SpecialMessageEvt;
 
         protected void OnSpecialMessageEvt(SpecialMessage sm, object call) {
             SpecialMessageEvt?.Invoke(sm, call);
         }
 
-        public object Call(object seq) {
-            if (_sendSync.Wait(5000)) {
-                var resp = BinFormater.Read(new MemoryStream(_transfering.Send(BinFormater.Write(seq, _symbolTable).ToArray())), _symbolTable);
+        private void ConnectServer() {
+            var ns = new NetStream(ConnectTcp());
 
-                if (resp.Car() is SpecialMessage) {
-                    OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);
-                    return null;
+            _dataTransfer = new DataTransfer(ns, ns, OTcpServer.BufferSize);
+
+            var isReconnected = false;
+
+            _dataTransfer.SetRapHandler(DataTransfer.pingRap, (data) => {
+                // apply ping
+            });
+
+            _dataTransfer.ConnectionStabilised = OnConnectionStabilised + new Action(() => {
+                if (isReconnected) {
+                    _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
+                } else {
+                    isReconnected = true;
                 }
+            });
 
-                return resp.Car();
+            _dataTransfer.ConnectionError = ex => {
+                lock (_dataTransfer) {
+                    // for single raction
+                    _dataTransfer.ConnectionError = null;
+
+                    _sendSync.Lock();
+                    Log?.Invoke($"Connection ERROR {ex.Message}");
+                    OnConnectionError(ex);
+
+                    IsConnected = false;
+                }
+            };
+
+            _dataTransfer.ReceivedData += (rap, data) => {
+                Actors.EnqueueData(new OTContext() { // Handle in other thread
+                    Context = rap,
+                    Data = data,
+                    TcpClient = ClientTcp,
+                    Evaluator = _evaluator,
+                    DataTransfer = _dataTransfer,
+                    Callback = HandleRequest
+                });
+            };
+
+            _dataTransfer.StartReaderLoop();
+
+
+            _sendSync.Unlock();
+        }
+
+        private static void HandleRequest(OTContext context) {
+            if (context.DataTransfer.HandlResp(context.Context, context.Data)) {
+                // handled as result of request
+                return;
             }
-            else {
-                // TODO connection was broken
-                Console.WriteLine("Call error");
-                OnConnectionError(new Exception("Call error"));
-                return null;
+
+            var responce = new byte[0];
+
+            var transactLog = new StringBuilder();
+            try {
+                var receive = BinFormater.Read(new MemoryStream(context.Data), context.SymbolTable);
+
+                transactLog.AppendLine($"<< {receive}");
+
+                var res = context.Evaluator.EvlSeq(receive, false);
+
+                transactLog.AppendLine($">> {res}");
+                Log?.Invoke(transactLog.ToString().Trim());
+
+                if (res != null) {
+                    responce = BinFormater.Write(res, context.SymbolTable).ToArray();
+                }
+            } catch (Exception e) {
+                var ex = e;
+                transactLog.AppendLine($">| {ex}");
+                var sb = new StringBuilder();
+                while (ex != null) {
+                    sb.AppendLine(ex.Message);
+                    ex = ex.InnerException;
+                }
+                Log?.Invoke(transactLog.ToString());
+                responce = BinFormater.Write(new SpecialMessage(sb.ToString()), context.SymbolTable).ToArray();
             }
+
+            // send responce to client
+            context.DataTransfer.WriteData(responce, context.Context);
+        }
+
+        private static object GetContextObj(string id) {
+            return Thread.GetData(Thread.GetNamedDataSlot(id));
+        }
+
+        private static void SetContextObj(string id, object obj) {
+            Thread.SetData(Thread.GetNamedDataSlot(id), obj);
         }
 
         protected virtual void OnConnectionStabilised() {
@@ -162,11 +182,50 @@ namespace Ogam3.Network.Tcp {
             ConnectionError?.Invoke(ex);
         }
 
+        private TcpClient ConnectTcp() {
+            while (true) {
+                try {
+                    ClientTcp?.Close();
+                    ClientTcp = new TcpClient();
+                    ClientTcp.Connect(Host, Port);
+
+                    break; // connection success
+                } catch (Exception) {
+                    ClientTcp?.Close();
+                    Thread.Sleep(1000); // sleep reconnection
+                }
+            }
+
+            return ClientTcp;
+        }
+
+        public object Call(object seq) {
+            if (_sendSync.Wait(5000)) {
+                var resp = BinFormater.Read(new MemoryStream(_dataTransfer.Send(BinFormater.Write(seq, _symbolTable).ToArray())), _symbolTable);
+
+                if (resp.Car() is SpecialMessage) {
+                    OnSpecialMessageEvt(resp.Car() as SpecialMessage, seq);
+                    return null;
+                }
+
+                return resp.Car();
+            } else {
+                // TODO connection was broken
+                Console.WriteLine("Call error");
+                OnConnectionError(new Exception("Call error"));
+                return null;
+            }
+        }
+
+        public void RegisterImplementation(object instanceOfImplementation) {
+            ClassRegistrator.Register(_evaluator.DefaultEnviroment, instanceOfImplementation);
+        }
+
         public void Dispose() {
             _isKeepConnection = false;
-            _transfering?.Dispose();
+           // _transfering?.Dispose();
             _sendSync?.Dispose();
-            _connSync?.Dispose();
+            //_connSync?.Dispose();
             ClientTcp?.Close();
         }
     }

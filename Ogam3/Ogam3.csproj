@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Ogam3</RootNamespace>
     <AssemblyName>Ogam3</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -22,6 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -30,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -41,6 +43,7 @@
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\Release\</OutputPath>
@@ -51,6 +54,7 @@
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LZ4, Version=1.0.15.93, Culture=neutral, PublicKeyToken=62e1b5ec1eec9bdd, processorArchitecture=MSIL">
@@ -65,6 +69,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actors\OTActorEngine.cs" />
     <Compile Include="Frt\OForth.cs" />
     <Compile Include="Lsp\BinFormater.cs" />
     <Compile Include="Lsp\Compiler.cs" />
@@ -96,10 +101,15 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serialization\ODataBase\MorpherDb.cs" />
     <Compile Include="Serialization\ODataBase\ItemDb.cs" />
+    <Compile Include="TxRx\DataTransfer.cs" />
+    <Compile Include="TxRx\OTContext.cs" />
+    <Compile Include="TxRx\Package.cs" />
+    <Compile Include="TxRx\Transmitter.cs" />
     <Compile Include="Utils\DbObjectBase.cs" />
     <Compile Include="Utils\Reflect.cs" />
     <Compile Include="Utils\SGuid.cs" />
     <Compile Include="Utils\LogTextWriter.cs" />
+    <Compile Include="Utils\SingleThreadedSynchronizationContext.cs" />
     <Compile Include="Utils\StringExtension.cs" />
     <Compile Include="Utils\Synchronizer.cs" />
     <Compile Include="Serialization\OSerializer.cs" />

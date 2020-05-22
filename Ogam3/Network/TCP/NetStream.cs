@@ -17,6 +17,8 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ogam3.Network.Tcp {
     class NetStream : Stream {
@@ -39,6 +41,10 @@ namespace Ogam3.Network.Tcp {
 
         public override int Read(byte[] buffer, int offset, int count) {
             return tcpClient.GetStream().Read(buffer, offset, count);
+        }
+
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) {
+            return tcpClient.GetStream().ReadAsync(buffer, offset, count, cancellationToken);
         }
 
         public override void Write(byte[] buffer, int offset, int count) {

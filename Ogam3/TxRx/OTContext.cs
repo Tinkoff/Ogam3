@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-namespace Ogam3.TxRx {
-    public class TpLspS {
-        public static byte BEGIN = 1;
-        public static byte PKGCOUNT = 3;
-        public static byte DATA = 5;
-        public static byte CHECK_HEADER = 6;
-        public static byte CHECK_DATA = 7;
-        public static byte ESCAPE = 8;
+using Ogam3.Lsp;
+using Ogam3.Network.TCP;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Sockets;
+using System.Text;
 
-        public ulong Rap;
-        public bool IsQuantizied;
-        public uint DataLength;
-        public uint QuantShift;
-        public uint QuantId;
-        public byte[] QuantData;
+namespace Ogam3.TxRx {
+    public class OTContext {
+        public ulong Context;
+        public byte[] Data;
+        public SymbolTable SymbolTable;
+        public Action<OTContext> Callback;
+        public TcpClient TcpClient;
+        public ReClient2 ReClient;
+        public Evaluator Evaluator;
+        public DataTransfer DataTransfer;
     }
 }

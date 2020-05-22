@@ -15,11 +15,13 @@
  */
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using CommonInterface;
 using Ogam3.Lsp;
 using Ogam3.Network.Tcp;
+using Ogam3.Network.TCP;
 
 namespace TcpClient {
     class Program {

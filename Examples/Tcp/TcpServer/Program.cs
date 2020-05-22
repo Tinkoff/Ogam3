@@ -17,8 +17,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using CommonInterface;
+using Ogam3.Actors;
 using Ogam3.Network.Tcp;
+using Ogam3.Network.TCP;
 using Ogam3.Utils;
 
 namespace TcpServer {
@@ -27,7 +30,9 @@ namespace TcpServer {
             // Set log mode
             LogTextWriter.InitLogMode();
             // Start listener
+            //var srv = new OTcpServer(1010);
             var srv = new OTcpServer(1010);
+            
             // Create server instance
             var impl = new ServerLogicImplementation();
             // Register server implementation
@@ -55,6 +60,7 @@ namespace TcpServer {
         // This method show client call from server
         public int IntSummOfPower(int a, int b) {
             var pc = OTcpServer.ContexReClient.CreateProxy<IClientSide>();
+            var xxx = pc.Power(a);
             return pc.Power(a) + pc.Power(b);
         }
 

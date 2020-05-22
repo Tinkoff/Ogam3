@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Ogam3.Network.Tcp;
+using Ogam3.Network.TCP;
 using Ogam3.Utils;
 
 namespace PerformanceNetCompare {
@@ -31,7 +32,7 @@ namespace PerformanceNetCompare {
                 var soapHost = new ServiceHost(typeof(Gate), soapBaseAddress);
                 soapHost.Open();
 
-                
+
                 var restBaseAddress = new Uri(restUrl);
                 var restHost = new WebServiceHost(typeof(Gate), restBaseAddress);
                 restHost.Open();
@@ -41,6 +42,10 @@ namespace PerformanceNetCompare {
                 var impl = new Gate();
                 srv.RegisterImplementation(impl);
 
+                OTcpServer.Log = null;
+                var srv2 = new OTcpServer(1158);
+                srv2.RegisterImplementation(impl);
+
                 Thread.Sleep(3000);
             }
 
@@ -48,9 +53,12 @@ namespace PerformanceNetCompare {
 
             var pc = new OTcpClient(ogamUrl, 1157).CreateProxy<IGate>();
 
+            var pc2 = new OTcpClient(ogamUrl, 1158).CreateProxy<IGate>();
+
             SoapCall(dto, soapUrl);
             RestCall(dto, restUrl);
             O3Call(dto, pc);
+            O3Call(dto, pc2);
 
             var cnt = 5000;
 
@@ -68,7 +76,12 @@ namespace PerformanceNetCompare {
             MultiCall(cnt, () => {
                 O3Call(dto, pc);
             });
-          
+
+            Console.Write($"O3 002 cnt = {cnt} elapsed = ");
+            MultiCall(cnt, () => {
+                O3Call(dto, pc2);
+            });
+
 
             Console.ReadLine();
         }
