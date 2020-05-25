@@ -116,6 +116,8 @@ namespace Ogam3.TxRx {
 
         object _sendLocker = new object();
         public void WriteData(byte[] data, ulong rap) {
+            if (isTranferDead) return;
+
             try {
                 using (var sync = Stream.Synchronized(_sendStream)) {
                     foreach (var quant in Package.BuilPackages(data, _quantSize, rap)) {

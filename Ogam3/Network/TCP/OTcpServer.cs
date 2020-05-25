@@ -25,16 +25,11 @@ namespace Ogam3.Network.TCP {
 
         private readonly QueryInterface _queryInterface;
 
-        public List<TcpClient> Clients;
-        public List<DataTransfer> Connections;
-
         public OTActorEngine Actors;
 
         public OTcpServer(int port, Evaluator evaluator = null, bool isAutoStartListener = true) {
             Evaluator = evaluator ?? new Evaluator();
 
-            Clients = new List<TcpClient>();
-            Connections = new List<DataTransfer>();
             Actors = new OTActorEngine();
 
             _queryInterface = new QueryInterface();
@@ -96,7 +91,6 @@ namespace Ogam3.Network.TCP {
                 });
             };
 
-            Connections.Add(server);
             server.StartReaderLoop();
         }
 
