@@ -90,13 +90,14 @@ namespace Ogam3.Network.TCP {
                 // apply ping
             });
 
-            _dataTransfer.ConnectionStabilised = OnConnectionStabilised + new Action(() => {
+            _dataTransfer.ConnectionStabilised = new Action(() => {
                 if (isReconnected) {
+                    _symbolTable = null;
                     _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
                 } else {
                     isReconnected = true;
-                }
-            });
+                } 
+            }) + OnConnectionStabilised;
 
             _dataTransfer.ConnectionError = ex => {
                 lock (_dataTransfer) {
