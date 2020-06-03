@@ -60,10 +60,10 @@ namespace Ogam3.Network.TCP {
         }
 
         private async void ListenerHandler(object o) {
-            var stx = new SingleThreadedSynchronizationContext();
+            //var stx = new SingleThreadedSynchronizationContext();
 
-            // event loop
-            new Thread(() => { stx.StartEventLoop(); }) { IsBackground = true }.Start();
+            //// event loop
+            //new Thread(() => { stx.StartEventLoop(); }) { IsBackground = true }.Start();
 
             var listener = (TcpListener)o;
             while (true) {
