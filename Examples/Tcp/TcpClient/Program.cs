@@ -19,8 +19,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommonInterface;
+using Ogam3.Actors;
 using Ogam3.Lsp;
 using Ogam3.Network.Tcp;
 using Ogam3.Network.TCP;
@@ -30,6 +32,23 @@ namespace TcpClient {
         static void Main(string[] args) {
             // Create connection
             var cli = new OTcpClient("localhost", 1010);
+
+            //var a = Async<string>.Default();
+            //cli.AsyncCall(null).Handl((res) => {
+            //    a.Result = res.Result as string;
+            //});
+
+            //Async<T> Unbox<T>(Async<object> async) {
+            //    var asyncT = Async<T>.Default();
+            //    async.Handl((res) => {
+            //        asyncT.Result = (T)res.Result;
+            //    });
+
+            //    return asyncT;
+            //}
+
+            //Async<string>.Unbox(cli.AsyncCall(null));
+
             // Register client interface implementation
             cli.RegisterImplementation(new ClientLogigImplementation());
             // Set server error handler
@@ -41,6 +60,23 @@ namespace TcpClient {
             };
             // Create proxy
             var pc = cli.CreateProxy<IServerSide>();
+
+
+            // Async call
+            for (var i = 0; i < 100; i++) {
+                pc.AsyncStringCall($"CALL {i}").Handl(d => {
+                    Console.WriteLine(d.Result);
+                });
+            }
+
+            pc.AsyncVoidCall().Handl(d => {
+                Console.WriteLine(d.Status);
+            });
+
+            Console.WriteLine("WAIT");
+
+            Console.ReadLine();
+
             // Server calls
             Console.WriteLine($"pc.IntSumm(11, 33) = {pc.IntSumm(11, 33)}");
             Console.WriteLine($"pc.DoubleSumm(1.1, 3.3) = {pc.DoubleSumm(1.1, 3.3)}");

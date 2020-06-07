@@ -141,6 +141,19 @@ namespace Ogam3.TxRx {
             return false;
         }
 
+        public void SendAsync(byte[] data, Action<byte[]> callback) {
+            if (isTranferDead)
+                callback(new byte[0]);
+
+            var rap = TpLspHelper.NewUID();
+            _synchronizer.TryAdd(rap, (rslt) => {
+                _synchronizer.TryRemove(rap, out var cb);
+                callback(rslt);
+            });
+
+            WriteData(data, rap);
+        }
+
         public byte[] Send(byte[] data) {
             if (isTranferDead)
                 return new byte[0];

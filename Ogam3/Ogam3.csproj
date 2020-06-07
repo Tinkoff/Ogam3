@@ -69,6 +69,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actors\Async.cs" />
     <Compile Include="Actors\OTActorEngine.cs" />
     <Compile Include="Frt\OForth.cs" />
     <Compile Include="Lsp\BinFormater.cs" />

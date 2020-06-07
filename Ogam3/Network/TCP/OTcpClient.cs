@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Net;
+using System.Timers;
 
 namespace Ogam3.Network.TCP {
     public class OTcpClient : ISomeClient, IDisposable {
@@ -198,6 +199,31 @@ namespace Ogam3.Network.TCP {
             }
 
             return ClientTcp;
+        }
+
+        public Async<object> AsyncCall(object seq) {
+            var res = Async<object>.Default();
+
+            if (_dataTransfer != null) {
+                _dataTransfer.SendAsync(
+                    BinFormater.Write(seq, _symbolTable).ToArray(),
+                    responce => {
+                        var resp = BinFormater.Read(new MemoryStream(responce), _symbolTable);
+                        if (resp.Car() is SpecialMessage) {
+                            res.SpecialMessage = resp.Car() as SpecialMessage;
+                            OnSpecialMessageEvt(res.SpecialMessage, seq);
+                            res.Result = null;
+                        } else {
+                            res.Result = resp.Car();
+                        }
+                    });
+            } else {
+                res.SpecialMessage = new SpecialMessage("The connection established.");
+                res.Result = null;
+            }
+
+            return res;
+            
         }
 
         public object Call(object seq) {

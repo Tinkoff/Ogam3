@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Ogam3.Actors;
 using Ogam3.Serialization;
 
 namespace Ogam3.Lsp.Generators {
@@ -48,8 +49,9 @@ namespace Ogam3.Lsp.Generators {
                                 ? implMethod.Name
                                 : $"{envAtt.EnviromentName}:{implMethod.Name}",
                         Arguments = implMethod.GetParameters(),
-                        ReturnType = implMethod.ReturnType
-                    });
+                        ReturnType = implMethod.ReturnType,
+                        UnwrappedReturnType = Async.UnwrapType(implMethod.ReturnType)
+                });
                 }
 
                 var instantName = $"{type.Name}_ClassRegistrator";
@@ -153,6 +155,7 @@ namespace Ogam3.Lsp.Generators {
             public string DefineName;
             public ParameterInfo[] Arguments;
             public Type ReturnType;
+            public Type UnwrappedReturnType;
         }
 
         static string CreateSrc(CodeCompileUnit codeCompileUnit) {
@@ -163,8 +166,7 @@ namespace Ogam3.Lsp.Generators {
             }
         }
 
-        static CodeCompileUnit GenerateProxyClass(Type implementationType, List<MethodDescriptors> desptors,
-            string nameSpaceName, string instantName) {
+        static CodeCompileUnit GenerateProxyClass(Type implementationType, List<MethodDescriptors> desptors, string nameSpaceName, string instantName) {
             var codeRoot = new CodeCompileUnit();
 
             var codeNamespace = new CodeNamespace(nameSpaceName);
@@ -186,8 +188,7 @@ namespace Ogam3.Lsp.Generators {
             targetClass.Members.Add(CreateCtor(implementationType, desptors));
 
             foreach (var mDescriptor in desptors) {
-                targetClass.Members.Add(CreateMethod(mDescriptor.MethodName, mDescriptor.Arguments,
-                    mDescriptor.ReturnType));
+                targetClass.Members.Add(CreateMethod(mDescriptor));
             }
 
             codeNamespace.Types.Add(targetClass);
@@ -224,21 +225,21 @@ namespace Ogam3.Lsp.Generators {
         }
 
         private const string NameOfImplementationField = "_Implementation";
-
-        static CodeMemberMethod CreateMethod(string methodName, ParameterInfo[] arguments, Type returnType) {
+        //string methodName, ParameterInfo[] arguments, Type returnType
+        static CodeMemberMethod CreateMethod(MethodDescriptors mDescription) {
             var callMethod = new CodeMemberMethod();
             callMethod.Attributes = MemberAttributes.Public | MemberAttributes.Final;
-            callMethod.Name = methodName;
-            callMethod.Parameters.AddRange(arguments
+            callMethod.Name = mDescription.MethodName;
+            callMethod.Parameters.AddRange(mDescription.Arguments
                 .Select(a => new CodeParameterDeclarationExpression(GetProxyPType(a.ParameterType), a.Name)).ToArray());
-            callMethod.ReturnType = new CodeTypeReference(GetProxyPType(returnType));
+            callMethod.ReturnType = new CodeTypeReference(GetProxyPType(mDescription.UnwrappedReturnType));
 
             var ImplRef =
                 new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), NameOfImplementationField);
 
             var listBuilderParams = new List<CodeExpression>();
 
-            foreach (var arg in arguments) {
+            foreach (var arg in mDescription.Arguments) {
                 var argRef = new CodeArgumentReferenceExpression(arg.Name);
                 if (BinFormater.IsPrimitive(arg.ParameterType) || IsNullablePrimitive(arg.ParameterType)) {
                     listBuilderParams.Add(argRef);
@@ -251,20 +252,22 @@ namespace Ogam3.Lsp.Generators {
                 }
             }
 
-            var invokeImpl = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(ImplRef, methodName),
-                listBuilderParams.ToArray());
+            var invokeImpl = (CodeExpression)new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(ImplRef, mDescription.MethodName), listBuilderParams.ToArray());
+
+            if (Async.IsAsyncGType(mDescription.ReturnType)) {
+                invokeImpl = new CodeFieldReferenceExpression(invokeImpl, nameof(Async<object>.Result));
+            }
 
 
-            if (returnType == typeof(void)) {
+            if (mDescription.UnwrappedReturnType == typeof(void)) {
                 callMethod.Statements.Add(invokeImpl);
             }
-            else if (BinFormater.IsPrimitive(returnType) || IsNullablePrimitive(returnType)) {
+            else if (BinFormater.IsPrimitive(mDescription.UnwrappedReturnType) || IsNullablePrimitive(mDescription.UnwrappedReturnType)) {
                 callMethod.Statements.Add(new CodeMethodReturnStatement(invokeImpl));
             }
             else {
                 var serializeResult = new CodeMethodInvokeExpression(
-                    new CodeTypeReferenceExpression(typeof(OSerializer)), nameof(OSerializer.SerializeOnly),
-                    invokeImpl);
+                    new CodeTypeReferenceExpression(typeof(OSerializer)), nameof(OSerializer.SerializeOnly), invokeImpl);
                 callMethod.Statements.Add(new CodeMethodReturnStatement(serializeResult));
             }
 
@@ -301,7 +304,7 @@ namespace Ogam3.Lsp.Generators {
 
             foreach (var desc in descriptors) {
                 var funcTypes = desc.Arguments.Select(p => GetProxyPType(p.ParameterType))
-                    .Concat(new[] {GetProxyPType(desc.ReturnType)}).ToArray();
+                    .Concat(new[] {GetProxyPType(desc.UnwrappedReturnType)}).ToArray();
                 var createDlgType = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Expression)),
                     nameof(Expression.GetDelegateType), funcTypes.Select(t => new CodeTypeOfExpression(t)).ToArray());
                 var createInvokableDlg = new CodeMethodInvokeExpression(

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading;
 using CommonInterface;
 using Ogam3.Actors;
 using Ogam3.Network.Tcp;
@@ -30,7 +31,6 @@ namespace TcpServer {
             // Set log mode
             LogTextWriter.InitLogMode();
             // Start listener
-            //var srv = new OTcpServer(1010);
             var srv = new OTcpServer(1010);
             
             // Create server instance
@@ -53,6 +53,18 @@ namespace TcpServer {
     }
 
     public class ServerLogicImplementation : IServerSide {
+        public Async AsyncVoidCall() {
+            return null;
+        }
+
+        private Random rnd = new Random();
+        private int i = 0;
+        public Async<string> AsyncStringCall(string str) {
+            var ii = i++;
+            Thread.Sleep(rnd.Next(1000, 10000));
+            return Async<string>.Success($"[{ii}] MESSAGE \"{str}\"");
+        }
+
         public int IntSumm(int a, int b) {
             return a + b;
         }
@@ -112,5 +124,6 @@ namespace TcpServer {
 
             return new Roots() {X1 = -b / (2 * a)};
         }
+
     }
 }

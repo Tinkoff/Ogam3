@@ -15,10 +15,13 @@
  */
 
 using Ogam3.Lsp.Generators;
+using Ogam3.Actors;
 
 namespace CommonInterface {
     [Enviroment ("server-side")]
     public interface IServerSide {
+        Async AsyncVoidCall();
+        Async<string> AsyncStringCall(string str);
         int IntSumm(int a, int b);
         int IntSummOfPower(int a, int b);
         double DoubleSumm(double a, double b);

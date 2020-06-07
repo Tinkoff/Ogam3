@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Ogam3.Actors;
 using Ogam3.Network;
 using Ogam3.Serialization;
 
@@ -250,14 +251,33 @@ namespace Ogam3.Lsp.Generators {
             }
 
             var consLst = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(Cons)), nameof(Cons.List), listBuilderParams.ToArray());
-
-            var invoke = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(tcpClientRef, nameof(ISomeClient.Call)), consLst);
+            CodeMethodInvokeExpression invoke;
+            if (Async.IsAsyncVType(returnType) || Async.IsAsyncGType(returnType)) {
+                invoke = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(tcpClientRef, nameof(ISomeClient.AsyncCall)), consLst);
+            } else {
+                invoke = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(tcpClientRef, nameof(ISomeClient.Call)), consLst);
+            }
 
             // IS VOID METHOD
             if (returnType == typeof(void)) {
                 callMethod.Statements.Add(invoke);
-            }
-            else {
+            } else
+            if (Async.IsAsyncGType(returnType)) {
+                callMethod.Statements.Add(
+                    new CodeMethodReturnStatement(
+                        new CodeMethodInvokeExpression(
+                            //new CodeTypeReferenceExpression(new CodeTypeReference(nameof(Async), new CodeTypeReference(returnType)))
+                            new CodeTypeReferenceExpression(new CodeTypeReference(returnType))
+                            , nameof(Async<object>.Unbox)
+                            , invoke)));
+            } else if (Async.IsAsyncVType(returnType)) {
+                callMethod.Statements.Add(
+                    new CodeMethodReturnStatement(
+                        new CodeMethodInvokeExpression(
+                            new CodeTypeReferenceExpression(new CodeTypeReference(nameof(Async)))
+                            , nameof(Async.Unbox)
+                            , invoke)));
+            } else {
                 const string requestResultVarName = "requestResult";
                 callMethod.Statements.Add(
                     new CodeVariableDeclarationStatement(typeof(object), requestResultVarName, invoke));
@@ -276,7 +296,7 @@ namespace Ogam3.Lsp.Generators {
                     prepareResult = new CodeMethodInvokeExpression(
                         new CodeTypeReferenceExpression(typeof(OSerializer))
                         , nameof(OSerializer.Deserialize)
-                        , new CodeCastExpression (typeof(Cons), requestResultRef)
+                        , new CodeCastExpression(typeof(Cons), requestResultRef)
                         , new CodeTypeOfExpression(returnType));
                 }
 
@@ -297,6 +317,7 @@ namespace Ogam3.Lsp.Generators {
 
             return callMethod;
         }
+
 
         static bool IsNullablePrimitive(Type t) {
             return IsNullable(t) && BinFormater.IsPrimitive(Nullable.GetUnderlyingType(t));

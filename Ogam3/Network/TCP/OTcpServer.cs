@@ -188,6 +188,10 @@ namespace Ogam3.Network.TCP {
 
                 return resp?.Car();
             }
+
+            public Async<object> AsyncCall(object seq) {
+                throw new NotImplementedException();
+            }
         }
     }
 }

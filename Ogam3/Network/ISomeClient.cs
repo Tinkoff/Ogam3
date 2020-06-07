@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+using Ogam3.Actors;
+using System;
+
 namespace Ogam3.Network {
     public interface ISomeClient {
         object Call(object seq);
+        Async<object> AsyncCall(object seq);
     }
 }

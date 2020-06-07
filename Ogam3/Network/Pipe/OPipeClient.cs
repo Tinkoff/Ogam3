@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Ogam3.Actors;
 using Ogam3.Lsp;
 using Ogam3.Lsp.Generators;
 using Ogam3.Network.Tcp;
@@ -154,6 +155,10 @@ namespace Ogam3.Network.Pipe {
             _sendSync?.Dispose();
             _transfering?.Dispose();
             pipeClient?.Dispose();
+        }
+
+        public Async<object> AsyncCall(object seq) {
+            throw new NotImplementedException();
         }
     }
 
