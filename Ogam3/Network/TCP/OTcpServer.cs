@@ -77,6 +77,9 @@ namespace Ogam3.Network.TCP {
         private void ClientConnected(TcpClient client) {
             var ns = new NetStream(client);
             var server = new DataTransfer(ns, ns, BufferSize);
+            server.ConnectionClose += () => {
+                client.Close();
+            };
 
             server.ReceivedData += (rap, data) => {
                 //Console.WriteLine("Main Thread: {0}", Thread.CurrentThread.ManagedThreadId);
@@ -191,6 +194,10 @@ namespace Ogam3.Network.TCP {
 
             public Async<object> AsyncCall(object seq) {
                 throw new NotImplementedException();
+            }
+
+            public void Close() {
+                DataTransfer.Close();
             }
         }
     }

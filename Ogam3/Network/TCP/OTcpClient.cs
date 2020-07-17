@@ -81,9 +81,13 @@ namespace Ogam3.Network.TCP {
         }
 
         private void ConnectServer() {
-            var ns = new NetStream(ConnectTcp());
+            var tcpClient = ConnectTcp();
+            var ns = new NetStream(tcpClient);
 
             _dataTransfer = new DataTransfer(ns, ns, OTcpServer.BufferSize);
+            _dataTransfer.ConnectionClose += () => {
+                tcpClient.Close();
+            };
 
             var isReconnected = false;
 
@@ -129,6 +133,7 @@ namespace Ogam3.Network.TCP {
 
             _sendSync.Unlock();
         }
+
 
         private static void HandleRequest(OTContext context) {
             if (context.DataTransfer.HandlResp(context.Context, context.Data)) {
@@ -253,6 +258,10 @@ namespace Ogam3.Network.TCP {
            // _transfering?.Dispose();
             _sendSync?.Dispose();
             //_connSync?.Dispose();
+            ClientTcp?.Close();
+        }
+
+        public void Close() {
             ClientTcp?.Close();
         }
     }

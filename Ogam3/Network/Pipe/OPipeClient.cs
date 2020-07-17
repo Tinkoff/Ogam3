@@ -160,6 +160,10 @@ namespace Ogam3.Network.Pipe {
         public Async<object> AsyncCall(object seq) {
             throw new NotImplementedException();
         }
+
+        public void Close() {
+            throw new NotImplementedException();
+        }
     }
 
     public class PipeClient : IDisposable {

@@ -38,6 +38,13 @@ namespace Ogam3.TxRx {
 
         public const ulong pingRap = 0;
 
+        public event Action ConnectionClose;
+        public void Close() {
+            try {
+                ConnectionClose?.Invoke();
+            } catch(Exception e) {}
+        }
+
         public DataTransfer(Stream sendStream, Stream receiveStream, uint quantSize) {
             _sendStream = sendStream;
             _receiveStream = receiveStream;
