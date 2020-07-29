@@ -36,6 +36,7 @@ namespace Ogam3.Utils {
         public static void InitLogMode(int maxStringLength = 30000) {
             _maxStringLength = maxStringLength;
             Console.SetOut(new LogTextWriter(Console.Out));
+            Console.SetError(Console.Out); //redirect Console.Errors to standard out for prevent autorestarting by AppNode
         }
 
         public LogTextWriter(TextWriter tw) {
