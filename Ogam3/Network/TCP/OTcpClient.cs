@@ -5,15 +5,10 @@ using Ogam3.TxRx;
 using Ogam3.Utils;
 using Ogam3.Actors;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.IO;
-using System.Net;
-using System.Timers;
 
 namespace Ogam3.Network.TCP {
     public class OTcpClient : ISomeClient, IDisposable {
@@ -41,6 +36,13 @@ namespace Ogam3.Network.TCP {
 
         public bool IsConnected { get; private set; }
 
+        public OTcpClient() {
+            _evaluator = new Evaluator();
+            Actors = new OTActorEngine();
+            _serverQueryInterfaceProxy = CreateProxy<IQueryInterface>();
+        }
+
+        [Obsolete]
         public OTcpClient(string host, int port, Action connectionStabilised = null, Evaluator evaluator = null) {
             Host = host;
             Port = port;
@@ -67,7 +69,24 @@ namespace Ogam3.Network.TCP {
             }) { IsBackground = true }.Start();
 
             // enqueue sybmbol table call
-            _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
+            GetSymbolTable();
+        }
+
+        /// <summary>
+        /// Run connection thread. No Symbol table call inside, use GetSymbolTable() instead.
+        /// </summary>
+        public void RunConnection() {
+            new Thread(() => {
+                ConnectServer();
+                IsConnected = true;
+
+                while (_isKeepConnection) {
+                    if (IsConnected) {
+                        _dataTransfer.WriteData(new byte[0], DataTransfer.pingRap);
+                    }
+                    Thread.Sleep(15000);
+                }
+            }) { IsBackground = true }.Start();
         }
 
         public T CreateProxy<T>() {
@@ -97,11 +116,11 @@ namespace Ogam3.Network.TCP {
 
             _dataTransfer.ConnectionStabilised = new Action(() => {
                 if (isReconnected) {
-                    _symbolTable = null;
-                    _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
+                    GetSymbolTable();
                 } else {
                     isReconnected = true;
-                } 
+                }
+                //IsSymbolTable = true;
             }) + OnConnectionStabilised;
 
             _dataTransfer.ConnectionError = ex => {
@@ -129,12 +148,15 @@ namespace Ogam3.Network.TCP {
             };
 
             _dataTransfer.StartReaderLoop();
-
-
+            
             _sendSync.Unlock();
         }
 
-
+        public void GetSymbolTable() {
+            _symbolTable = null;
+            _symbolTable = new SymbolTable(_serverQueryInterfaceProxy.GetIndexedSymbols());
+        }
+        
         private static void HandleRequest(OTContext context) {
             if (context.DataTransfer.HandlResp(context.Context, context.Data)) {
                 // handled as result of request
@@ -173,13 +195,13 @@ namespace Ogam3.Network.TCP {
             context.DataTransfer.WriteData(responce, context.Context);
         }
 
-        private static object GetContextObj(string id) {
-            return Thread.GetData(Thread.GetNamedDataSlot(id));
-        }
+        //private static object GetContextObj(string id) {
+        //    return Thread.GetData(Thread.GetNamedDataSlot(id));
+        //}
 
-        private static void SetContextObj(string id, object obj) {
-            Thread.SetData(Thread.GetNamedDataSlot(id), obj);
-        }
+        //private static void SetContextObj(string id, object obj) {
+        //    Thread.SetData(Thread.GetNamedDataSlot(id), obj);
+        //}
 
         protected virtual void OnConnectionStabilised() {
             ConnectionStabilised?.Invoke();
@@ -255,9 +277,8 @@ namespace Ogam3.Network.TCP {
 
         public void Dispose() {
             _isKeepConnection = false;
-           // _transfering?.Dispose();
             _sendSync?.Dispose();
-            //_connSync?.Dispose();
+            _dataTransfer?.Close();
             ClientTcp?.Close();
         }
 
