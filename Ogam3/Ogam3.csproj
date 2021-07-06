@@ -1,116 +1,21 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{75C9EA24-E356-4197-B72A-99D41699898D}</ProjectGuid>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Ogam3</RootNamespace>
-    <AssemblyName>Ogam3</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LZ4, Version=1.0.15.93, Culture=neutral, PublicKeyToken=62e1b5ec1eec9bdd, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\lz4net.1.0.15.93\lib\net4-client\LZ4.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Frt\OForth.cs" />
-    <Compile Include="Lsp\BinFormater.cs" />
-    <Compile Include="Lsp\Compiler.cs" />
-    <Compile Include="Lsp\Cons.cs" />
-    <Compile Include="Lsp\Continuation.cs" />
-    <Compile Include="Lsp\Defaults\Core.cs" />
-    <Compile Include="Lsp\Defaults\CoreMacro.cs" />
-    <Compile Include="Lsp\EnviromentFrame.cs" />
-    <Compile Include="Lsp\Evaluator.cs" />
-    <Compile Include="Lsp\Generators\ClassRegistrator.cs" />
-    <Compile Include="Lsp\Generators\RemoteCallGenertor.cs" />
-    <Compile Include="Lsp\Lambda.cs" />
-    <Compile Include="Lsp\MacroSystem.cs" />
-    <Compile Include="Lsp\Params.cs" />
-    <Compile Include="Lsp\Reader.cs" />
-    <Compile Include="Lsp\SpecialMessage.cs" />
-    <Compile Include="Lsp\Symbol.cs" />
-    <Compile Include="Lsp\VM.cs" />
-    <Compile Include="Network\ISomeClient.cs" />
-    <Compile Include="Network\Pipe\OPipeClient.cs" />
-    <Compile Include="Network\Pipe\OPipeHelper.cs" />
-    <Compile Include="Network\Pipe\OPipeServer.cs" />
-    <Compile Include="Network\Pipe\PipeTransferStream.cs" />
-    <Compile Include="Network\TCP\IQueryInterface.cs" />
-    <Compile Include="Network\TCP\NetStream.cs" />
-    <Compile Include="Network\TCP\OTcpClient.cs" />
-    <Compile Include="Network\TCP\OTcpServer.cs" />
-    <Compile Include="Network\TCP\QueryInterface.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Serialization\ODataBase\MorpherDb.cs" />
-    <Compile Include="Serialization\ODataBase\ItemDb.cs" />
-    <Compile Include="Utils\DbObjectBase.cs" />
-    <Compile Include="Utils\Reflect.cs" />
-    <Compile Include="Utils\SGuid.cs" />
-    <Compile Include="Utils\LogTextWriter.cs" />
-    <Compile Include="Utils\StringExtension.cs" />
-    <Compile Include="Utils\Synchronizer.cs" />
-    <Compile Include="Serialization\OSerializer.cs" />
-    <Compile Include="TxRx\MemoryChannel.cs" />
-    <Compile Include="TxRx\TpLspHelper.cs" />
-    <Compile Include="TxRx\TpLspS.cs" />
-    <Compile Include="TxRx\Transfering.cs" />
-    <Compile Include="Utils\ThreadBazuka.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
