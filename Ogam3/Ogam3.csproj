@@ -1,8 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+<Version>3.0.0</Version>
     <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/TinkoffCreditSystems/Ogam3</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/TinkoffCreditSystems/Ogam3</RepositoryUrl>
+    <PackageReleaseNotes>C#, Lisp, Scheme, Forth</PackageReleaseNotes>
+    <Authors>Anton Zhukov</Authors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
